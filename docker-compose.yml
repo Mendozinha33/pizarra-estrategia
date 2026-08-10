@@ -16,8 +16,10 @@ services:
   api:
     build: ./backend
     environment:
-      PIZARRA_DATABASE_URL: postgresql+psycopg://pizarra:pizarra@db:5432/pizarra
-      PIZARRA_CORS_ORIGINS: http://localhost:8180
+      # Valores por defecto para el stack local; exporta la variable (o ponla en
+      # un .env junto a este fichero) para apuntar a otra base, p. ej. Supabase.
+      PIZARRA_DATABASE_URL: ${PIZARRA_DATABASE_URL:-postgresql+psycopg://pizarra:pizarra@db:5432/pizarra}
+      PIZARRA_CORS_ORIGINS: ${PIZARRA_CORS_ORIGINS:-http://localhost:8180}
     depends_on:
       db:
         condition: service_healthy
