@@ -1,0 +1,26 @@
+# Sólo la base de datos, para desarrollar con uvicorn y Vite en local:
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Proyecto propio para que no choque con el stack completo de docker-compose.yml.
+name: pizarra-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pizarra
+      POSTGRES_PASSWORD: pizarra
+      POSTGRES_DB: pizarra
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+      - ./backend/scripts/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pizarra']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata_dev:

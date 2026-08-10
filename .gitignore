@@ -1,0 +1,22 @@
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.db
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Entorno
+.env
+.env.local
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Herramientas locales
+.gstack/
