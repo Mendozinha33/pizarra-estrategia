@@ -67,6 +67,44 @@ Abre <http://localhost:5173>. Vite hace de proxy de `/api` hacia el backend, as�
 desarrollo no hace falta ni CORS ni URLs absolutas. Si tu API vive en otro sitio:
 `VITE_API_TARGET=http://otro-host:8000 npm run dev`.
 
+## Contra el backend desplegado
+
+La API está en <https://pizarra-estrategia.onrender.com>. Hay dos formas de apuntar el
+frontend hacia ella, según si el navegador ve un origen o dos.
+
+**En desarrollo**, dejando que el proxy de Vite haga de intermediario (no hay petición
+entre orígenes, así que no interviene CORS):
+
+```bash
+cd frontend
+VITE_API_TARGET=https://pizarra-estrategia.onrender.com npm run dev
+# PowerShell: $env:VITE_API_TARGET='https://pizarra-estrategia.onrender.com'; npm run dev
+```
+
+**En Vercel** (`frontend/vercel.json`), donde el propio Vercel reenvía `/api/*` a Render.
+El navegador sigue viendo un único origen, así que tampoco interviene CORS. Al importar el
+repo, pon **Root Directory = `frontend`**; el resto lo lee del `vercel.json`.
+
+Se apoya en el build normal (rutas relativas), y por eso funciona igual en producción que
+en cada *preview deployment*, aunque su URL cambie en cada push. Con URLs absolutas habría
+que ir añadiendo cada dominio de preview a la lista de CORS del backend.
+
+**Build estático** para cualquier otro hosting, con la URL de la API incrustada
+(`frontend/.env.render`):
+
+```bash
+cd frontend
+npm run build:render      # sirve dist/ donde quieras
+```
+
+Aquí el navegador sí habla directamente con Render, así que el backend tiene que aceptar
+el origen del frontend: en Render, `PIZARRA_CORS_ORIGINS=https://tu-frontend.example`
+(separa por comas si son varios). Sin eso las peticiones se caen en el preflight y la app
+muestra «No se ha podido contactar con el servidor».
+
+`npm run build` a secas no lleva ninguna URL absoluta: sigue usando rutas relativas, que
+es lo que necesitan tanto el nginx del stack de Docker como el reenvío de Vercel.
+
 ## Con Docker
 
 ```bash
