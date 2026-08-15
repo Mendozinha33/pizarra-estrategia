@@ -2,18 +2,26 @@ import { useCallback, useState } from 'react'
 
 import { Header } from './components/layout/Header.jsx'
 import { useToast } from './components/ui/Toast.jsx'
+import { LoginView } from './features/auth/LoginView.jsx'
+import { PasswordDialog } from './features/auth/PasswordDialog.jsx'
 import { BoardView } from './features/board/BoardView.jsx'
 import { PlaysView } from './features/plays/PlaysView.jsx'
 import { SessionView } from './features/session/SessionView.jsx'
+import { UsersView } from './features/users/UsersView.jsx'
+import { useAuth } from './hooks/useAuth.jsx'
 import { useDebouncedValue } from './hooks/useDebouncedValue.js'
 import { usePlays } from './hooks/usePlays.js'
 import { useTrainingSession } from './hooks/useTrainingSession.js'
 import { useWorkspace } from './hooks/useWorkspace.js'
 
-export default function App() {
+/** La aplicación en sí. Sólo se monta con la sesión iniciada. */
+function Workspace() {
   const toast = useToast()
+  const { user, isAdmin } = useAuth()
   const [view, setView] = useState('pizarra')
   const [filters, setFilters] = useState({ category: '', search: '' })
+  // Obligatorio si el administrador acaba de dar de alta o restablecer la contraseña.
+  const [passwordDialog, setPasswordDialog] = useState(false)
 
   // El buscador no debe lanzar una petición por tecla.
   const debouncedSearch = useDebouncedValue(filters.search, 300)
@@ -22,6 +30,7 @@ export default function App() {
   const workspace = useWorkspace(plays)
 
   const offline = plays.error?.status === 0 || session.error?.status === 0
+  const mustChangePassword = user.must_change_password
 
   const openPlay = useCallback(
     (play) => {
@@ -73,7 +82,12 @@ export default function App() {
 
   return (
     <>
-      <Header view={view} onViewChange={setView} offline={offline} />
+      <Header
+        view={view}
+        onViewChange={setView}
+        offline={offline}
+        onChangePassword={() => setPasswordDialog(true)}
+      />
       <main>
         {view === 'pizarra' && <BoardView workspace={workspace} plays={plays} />}
 
@@ -97,7 +111,25 @@ export default function App() {
             onOpenPlay={openPlay}
           />
         )}
+
+        {view === 'usuarios' && isAdmin && <UsersView />}
       </main>
+
+      {(passwordDialog || mustChangePassword) && (
+        <PasswordDialog required={mustChangePassword} onClose={() => setPasswordDialog(false)} />
+      )}
     </>
   )
+}
+
+export default function App() {
+  const { user, checking } = useAuth()
+
+  if (checking) {
+    return <div className="login">
+      <p className="hint">Cargando…</p>
+    </div>
+  }
+
+  return user ? <Workspace /> : <LoginView />
 }

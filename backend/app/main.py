@@ -11,7 +11,8 @@ from fastapi.responses import JSONResponse
 from app.api.router import api_router
 from app.core.config import settings
 from app.db.base import Base
-from app.db.session import engine
+from app.db.session import SessionLocal, engine
+from app.services import users as user_service
 
 # Importar los modelos registra sus tablas en el metadata de Base.
 from app import models  # noqa: F401  isort:skip
@@ -28,6 +29,13 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Para un esquema que evoluciona en producción, sustituir por migraciones Alembic.
     Base.metadata.create_all(bind=engine)
     logger.info("Esquema listo en %s", engine.url.render_as_string(hide_password=True))
+
+    # Clave de firma de sesiones y administrador inicial (sólo la primera vez).
+    with SessionLocal() as db:
+        user_service.ensure_signing_secret(db)
+        created = user_service.ensure_initial_admin(db)
+        if created is not None:
+            logger.info("Administrador inicial creado: %s", created.email)
     yield
 
 

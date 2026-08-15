@@ -17,12 +17,12 @@ PIZARRA/
 │   │   ├── schemas/    Contratos Pydantic (incluida la validación del tablero)
 │   │   └── services/   Lógica de negocio, sin dependencias de FastAPI
 │   ├── scripts/        SQL de inicialización (base de tests)
-│   └── tests/          20 tests de API contra PostgreSQL
+│   └── tests/          44 tests de API contra PostgreSQL
 ├── frontend/           React 18 + Vite
 │   └── src/
 │       ├── api/        Cliente HTTP y endpoints
 │       ├── components/ Piezas reutilizables (lienzo SVG, UI)
-│       ├── features/   Vistas: pizarra, jugadas, sesión
+│       ├── features/   Vistas: acceso, pizarra, jugadas, sesión, usuarios
 │       ├── hooks/      Estado: tablero, reproducción, datos
 │       └── lib/        Geometría, formaciones, constantes
 ├── legacy/             El HTML original, como referencia
@@ -133,12 +133,23 @@ Variables de entorno con prefijo `PIZARRA_` (ver `backend/.env.example`):
 | `PIZARRA_API_PREFIX`         | `/api`                                     | Prefijo de todas las rutas               |
 | `PIZARRA_DB_POOL_SIZE`       | `5`                                        | Conexiones fijas del pool                |
 | `PIZARRA_DB_MAX_OVERFLOW`    | `10`                                       | Conexiones extra bajo carga              |
+| `PIZARRA_AUTH_SECRET`        | *(vacío)*                                  | Clave de firma de sesiones; si está vacía se genera sola y se guarda en `app_settings` |
+| `PIZARRA_SESSION_DAYS`       | `30`                                       | Días que dura la sesión iniciada         |
+| `PIZARRA_ADMIN_EMAIL`        | `admin@aravacacf.com`                      | Administrador inicial (sólo si no hay ningún usuario) |
+| `PIZARRA_ADMIN_PASSWORD`     | `admin123`                                 | Contraseña del administrador inicial     |
 
 ## API
 
 | Método   | Ruta                                     | Qué hace                                    |
 | -------- | ---------------------------------------- | ------------------------------------------- |
 | `GET`    | `/api/health`, `/api/health/ready`       | Liveness y readiness (esta comprueba la BD) |
+| `POST`   | `/api/auth/login`                        | Iniciar sesión: devuelve credencial y usuario |
+| `GET`    | `/api/auth/me`                           | Usuario de la sesión actual                 |
+| `POST`   | `/api/auth/password`                     | Cambiar la propia contraseña                |
+| `GET`    | `/api/users`                             | Listar usuarios (administrador)             |
+| `POST`   | `/api/users`                             | Dar de alta un usuario (administrador)      |
+| `PATCH`  | `/api/users/{id}`                        | Editar o bloquear (administrador)           |
+| `POST`   | `/api/users/{id}/password`               | Restablecer contraseña (administrador)      |
 | `GET`    | `/api/plays`                             | Lista jugadas (`category`, `search`, paginación) |
 | `POST`   | `/api/plays`                             | Crea una jugada                             |
 | `GET`    | `/api/plays/{id}`                        | Detalle                                     |
@@ -152,8 +163,19 @@ Variables de entorno con prefijo `PIZARRA_` (ver `backend/.env.example`):
 | `DELETE` | `/api/sessions/{id}/blocks/{block_id}`   | Quitar bloque                               |
 | `PUT`    | `/api/sessions/{id}/blocks/order`        | Reordenar bloques                           |
 
+### Acceso
+
+Salvo `/api/health*` y `/api/auth/login`, todas las rutas exigen la cabecera
+`Authorization: Bearer <credencial>`. La credencial va firmada con HMAC-SHA256 y lleva
+dentro el usuario, su versión de contraseña y la caducidad; el servidor no guarda sesiones.
+Cambiar o restablecer una contraseña, o bloquear al usuario, sube su `token_version` e
+invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKDF2-HMAC-SHA256
+(200 000 iteraciones y sal aleatoria). Todo con biblioteca estándar: sin dependencias nuevas.
+
 ### Modelo de datos
 
+- **User**: correo (único, en minúsculas), nombre, permiso (`admin`, `entrenador`), hash de
+  contraseña, bloqueado y `must_change_password` (marcado al dar de alta y al restablecer).
 - **Play**: nombre, categoría (`Ataque`, `Defensa`, `ABP`, `Entrenamiento`), superficie
   (`full`, `half`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo, consignas y
   el `board`.

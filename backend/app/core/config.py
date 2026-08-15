@@ -28,6 +28,17 @@ class Settings(BaseSettings):
 
     api_prefix: str = "/api"
 
+    # Acceso de usuarios. La clave de firma se genera sola y se guarda en la base
+    # de datos si no se define aquí; así nunca está escrita en el repositorio.
+    auth_secret: str = ""
+    session_days: int = 30
+
+    # Sólo se usan la primera vez, para crear el administrador inicial. Si ya hay
+    # usuarios dados de alta, estos valores se ignoran.
+    admin_email: str = "admin@aravacacf.com"
+    admin_password: str = "admin123"
+    admin_name: str = "Administrador"
+
     # Cadena separada por comas y no una lista: pydantic-settings exigiría JSON
     # para un list[str], y `PIZARRA_CORS_ORIGINS=a,b` es lo natural en un .env.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"

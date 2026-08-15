@@ -27,7 +27,11 @@ from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
-TABLES = "session_blocks, training_sessions, plays"
+# `app_settings` no se vacía: guarda la clave de firma de las sesiones.
+TABLES = "session_blocks, training_sessions, plays, users"
+
+ADMIN_EMAIL = "admin@aravacacf.com"
+ADMIN_PASSWORD = "admin123"
 
 
 @pytest.fixture(scope="session")
@@ -65,11 +69,26 @@ def db_session(engine) -> Iterator[Session]:
 
 
 @pytest.fixture
-def client(db_session: Session) -> Iterator[TestClient]:
+def anon_client(db_session: Session) -> Iterator[TestClient]:
+    """Cliente sin sesión iniciada. Al arrancar se crea el administrador inicial."""
     app.dependency_overrides[get_db] = lambda: db_session
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+def login(test_client: TestClient, email: str, password: str) -> str:
+    response = test_client.post("/api/auth/login", json={"email": email, "password": password})
+    assert response.status_code == 200, response.text
+    return response.json()["token"]
+
+
+@pytest.fixture
+def client(anon_client: TestClient) -> TestClient:
+    """Cliente ya autenticado como administrador: lo que usa casi todo el resto."""
+    token = login(anon_client, ADMIN_EMAIL, ADMIN_PASSWORD)
+    anon_client.headers["Authorization"] = f"Bearer {token}"
+    return anon_client
 
 
 @pytest.fixture

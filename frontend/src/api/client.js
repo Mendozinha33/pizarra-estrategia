@@ -23,19 +23,41 @@ function describe(status, body) {
   return `Error ${status} del servidor`
 }
 
-export async function request(path, { method = 'GET', body, signal } = {}) {
+/**
+ * Credencial de la sesión. La guarda `useAuth`; aquí sólo se conserva la última
+ * conocida para poder añadirla a cada petición sin pasarla por todas las llamadas.
+ */
+let sessionToken = null
+let onSessionExpired = null
+
+export function setSessionToken(token) {
+  sessionToken = token || null
+}
+
+export function setSessionExpiredHandler(handler) {
+  onSessionExpired = handler
+}
+
+export async function request(path, { method = 'GET', body, signal, anonymous = false } = {}) {
+  const headers = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (sessionToken && !anonymous) headers.Authorization = `Bearer ${sessionToken}`
+
   let response
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       method,
       signal,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch (cause) {
     if (cause?.name === 'AbortError') throw cause
     throw new ApiError('No se ha podido contactar con el servidor', { status: 0 })
   }
+
+  // Sesión caducada, contraseña cambiada o usuario bloqueado: volver a la entrada.
+  if (response.status === 401 && !anonymous) onSessionExpired?.()
 
   if (response.status === 204) return null
 
