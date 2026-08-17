@@ -1,5 +1,5 @@
 import { BoardCanvas } from '../../components/board/BoardCanvas.jsx'
-import { COLORS } from '../../lib/constants.js'
+import { COLORS, NO_FOLDER_LABEL, PLAY_KINDS } from '../../lib/constants.js'
 import { Icon } from '../../components/ui/Icon.jsx'
 
 const dateFormatter = new Intl.DateTimeFormat('es-ES', {
@@ -9,6 +9,9 @@ const dateFormatter = new Intl.DateTimeFormat('es-ES', {
 })
 
 export function PlayCard({ play, onOpen, onAddToSession, onDelete }) {
+  const kind = PLAY_KINDS.find((entry) => entry.id === play.kind)?.one ?? ''
+  const place = [kind, play.folder || NO_FOLDER_LABEL].filter(Boolean).join(' · ')
+
   return (
     <article className="play">
       <div className="thumb">
@@ -21,6 +24,9 @@ export function PlayCard({ play, onOpen, onAddToSession, onDelete }) {
         </h3>
         <div className="mono" style={{ fontSize: 11, color: COLORS.muted, marginTop: 3 }}>
           {dateFormatter.format(new Date(play.created_at))}
+          {place && ` · ${place}`}
+          {/* Sólo llega con nombre cuando quien mira es el administrador. */}
+          {play.owner_name && ` · ${play.owner_name}`}
         </div>
         {play.notes && <p className="hint" style={{ marginTop: 6 }}>{play.notes}</p>}
       </div>

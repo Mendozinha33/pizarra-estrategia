@@ -7,7 +7,7 @@ import { exportSvgToPng } from '../lib/exportPng.js'
 import { useBoardEditor } from './useBoardEditor.js'
 import { usePlayback } from './usePlayback.js'
 
-const EMPTY_META = { name: '', category: 'Ataque', notes: '' }
+const EMPTY_META = { name: '', category: 'Ataque', notes: '', kind: 'entrenamiento', folder: '' }
 
 /**
  * Estado de trabajo de la pizarra: herramientas, tablero, reproducción y el
@@ -73,6 +73,8 @@ export function useWorkspace(plays) {
         name,
         category: draftMeta.category,
         notes: draftMeta.notes,
+        kind: draftMeta.kind,
+        folder: draftMeta.folder,
         surface,
         formation_size: editor.formationSize,
         home_formation: editor.homeFormation,
@@ -107,6 +109,8 @@ export function useWorkspace(plays) {
         name: draftMeta.name.trim() || editingPlay.name,
         category: draftMeta.category,
         notes: draftMeta.notes,
+        kind: draftMeta.kind,
+        folder: draftMeta.folder,
         surface,
         formation_size: editor.formationSize,
         home_formation: editor.homeFormation,
@@ -142,7 +146,13 @@ export function useWorkspace(plays) {
         awayFormation: play.away_formation,
       })
       setSurface(play.surface)
-      setDraftMeta({ name: play.name, category: play.category, notes: play.notes ?? '' })
+      setDraftMeta({
+        name: play.name,
+        category: play.category,
+        notes: play.notes ?? '',
+        kind: play.kind ?? 'entrenamiento',
+        folder: play.folder ?? '',
+      })
       setEditingPlay(play)
       toast.notify(`Jugada cargada: ${play.name}`)
     },

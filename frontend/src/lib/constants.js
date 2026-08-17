@@ -40,6 +40,18 @@ export const SURFACE_OPTIONS = Object.entries(SURFACES).map(([id, s]) => ({
 /** Debe coincidir con `PlayCategory` del backend. */
 export const PLAY_CATEGORIES = ['Ataque', 'Defensa', 'ABP', 'Entrenamiento']
 
+/**
+ * Carpetas fijas de primer nivel. Dentro de cada una el usuario crea las suyas.
+ * Los identificadores deben coincidir con `PlayKind` del backend.
+ */
+export const PLAY_KINDS = [
+  { id: 'entrenamiento', label: 'Entrenamientos', one: 'Entrenamiento' },
+  { id: 'partido', label: 'Partidos', one: 'Partido' },
+]
+
+/** Etiqueta de las jugadas que no están en ninguna carpeta. */
+export const NO_FOLDER_LABEL = 'Sin carpeta'
+
 export const PEN_COLORS = [
   { id: 'amarillo', hex: '#FFD447' },
   { id: 'blanco', hex: '#EAF2EC' },

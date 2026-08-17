@@ -15,6 +15,10 @@ class TrainingSession(TimestampMixin, Base):
     __tablename__ = "training_sessions"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    # Cada entrenador tiene sus propias sesiones; el administrador las ve todas.
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(120), nullable=False)
     scheduled_for: Mapped[date | None] = mapped_column(Date, nullable=True)
     objective: Mapped[str] = mapped_column(String(2000), nullable=False, default="")

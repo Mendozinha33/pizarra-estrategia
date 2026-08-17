@@ -1,10 +1,11 @@
-import { COLORS, PLAY_CATEGORIES } from '../../lib/constants.js'
+import { COLORS, PLAY_CATEGORIES, PLAY_KINDS } from '../../lib/constants.js'
 import { Icon } from '../../components/ui/Icon.jsx'
 
 /** Columna derecha: metadatos de la jugada y acceso rápido a la biblioteca. */
 export function SavePlayPanel({
   draftMeta,
   onDraftMetaChange,
+  folderNames,
   editingPlay,
   onSaveNew,
   onUpdate,
@@ -53,6 +54,38 @@ export function SavePlayPanel({
             </option>
           ))}
         </select>
+
+        <label className="f" htmlFor="play-kind">
+          Guardar en
+        </label>
+        <select
+          id="play-kind"
+          value={draftMeta.kind}
+          onChange={(e) => update({ kind: e.target.value })}
+        >
+          {PLAY_KINDS.map((kind) => (
+            <option key={kind.id} value={kind.id}>
+              {kind.label}
+            </option>
+          ))}
+        </select>
+
+        <label className="f" htmlFor="play-folder">
+          Carpeta
+        </label>
+        <input
+          id="play-folder"
+          list="folder-names"
+          maxLength={60}
+          value={draftMeta.folder}
+          onChange={(e) => update({ folder: e.target.value })}
+          placeholder="Ej. Jornada 3 (opcional)"
+        />
+        <datalist id="folder-names">
+          {folderNames.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
 
         <label className="f" htmlFor="play-notes">
           Consignas

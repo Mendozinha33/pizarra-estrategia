@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.db import upgrade
 from app.db.base import Base
 from app.db.session import SessionLocal, engine
 from app.services import users as user_service
@@ -36,6 +37,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         created = user_service.ensure_initial_admin(db)
         if created is not None:
             logger.info("Administrador inicial creado: %s", created.email)
+
+    # Columnas añadidas después del primer despliegue, y adopción de lo que se
+    # guardó cuando todavía no había usuarios. Va después del administrador
+    # inicial porque necesita que exista para adoptar.
+    upgrade.run(engine)
     yield
 
 

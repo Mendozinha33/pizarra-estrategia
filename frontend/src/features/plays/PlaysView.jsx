@@ -1,19 +1,37 @@
-import { PLAY_CATEGORIES } from '../../lib/constants.js'
+import { NO_FOLDER_LABEL, PLAY_CATEGORIES, PLAY_KINDS } from '../../lib/constants.js'
 import { Icon } from '../../components/ui/Icon.jsx'
+import { FolderTree } from './FolderTree.jsx'
 import { PlayCard } from './PlayCard.jsx'
 
-/** Biblioteca de jugadas guardadas, con filtros por categoría y texto. */
-export function PlaysView({ plays, filters, onFiltersChange, onOpen, onAddToSession, onDelete, onGoToBoard }) {
+/** Título de la carpeta abierta, para que se vea siempre dónde está uno. */
+function placeLabel({ kind, folder }) {
+  if (!kind) return 'Todas las jugadas'
+  const label = PLAY_KINDS.find((entry) => entry.id === kind)?.label ?? kind
+  if (folder === null) return label
+  return `${label} · ${folder || NO_FOLDER_LABEL}`
+}
+
+/** Biblioteca de jugadas guardadas, organizada en carpetas. */
+export function PlaysView({
+  plays,
+  filters,
+  onFiltersChange,
+  onOpen,
+  onAddToSession,
+  onDelete,
+  onGoToBoard,
+}) {
   const count = plays.plays.length
+  const filtered = Boolean(filters.category || filters.search)
 
   return (
     <>
       <div className="tray">
         <div>
-          <div className="eyebrow">Biblioteca</div>
+          <div className="eyebrow">{placeLabel(filters)}</div>
           <h2 style={{ fontSize: 22 }}>
             {count} {count === 1 ? 'jugada' : 'jugadas'}{' '}
-            {filters.category || filters.search
+            {filtered
               ? count === 1
                 ? 'filtrada'
                 : 'filtradas'
@@ -52,38 +70,50 @@ export function PlaysView({ plays, filters, onFiltersChange, onOpen, onAddToSess
         </div>
       </div>
 
-      {plays.error && (
-        <div className="empty error">
-          No se han podido cargar las jugadas: {plays.error.message}.{' '}
-          <button type="button" className="linklike" onClick={plays.reload}>
-            Reintentar
-          </button>
-        </div>
-      )}
+      <div className="library">
+        <FolderTree
+          folders={plays.folders}
+          selection={{ kind: filters.kind, folder: filters.folder }}
+          onSelect={(selection) => onFiltersChange({ ...filters, ...selection })}
+        />
 
-      {plays.loading && count === 0 && <div className="empty">Cargando jugadas…</div>}
+        <div>
+          {plays.error && (
+            <div className="empty error">
+              No se han podido cargar las jugadas: {plays.error.message}.{' '}
+              <button type="button" className="linklike" onClick={plays.reload}>
+                Reintentar
+              </button>
+            </div>
+          )}
 
-      {!plays.loading && count === 0 && !plays.error && (
-        <div className="empty">
-          {filters.search || filters.category
-            ? 'Ninguna jugada coincide con el filtro.'
-            : 'Aún no hay jugadas. Diséñala en la pizarra y guárdala para tenerla aquí.'}
-        </div>
-      )}
+          {plays.loading && count === 0 && <div className="empty">Cargando jugadas…</div>}
 
-      {count > 0 && (
-        <div className="grid-plays">
-          {plays.plays.map((play) => (
-            <PlayCard
-              key={play.id}
-              play={play}
-              onOpen={onOpen}
-              onAddToSession={onAddToSession}
-              onDelete={onDelete}
-            />
-          ))}
+          {!plays.loading && count === 0 && !plays.error && (
+            <div className="empty">
+              {filtered
+                ? 'Ninguna jugada coincide con el filtro.'
+                : filters.kind || filters.folder !== null
+                  ? 'Esta carpeta está vacía.'
+                  : 'Aún no hay jugadas. Diséñala en la pizarra y guárdala para tenerla aquí.'}
+            </div>
+          )}
+
+          {count > 0 && (
+            <div className="grid-plays">
+              {plays.plays.map((play) => (
+                <PlayCard
+                  key={play.id}
+                  play={play}
+                  onOpen={onOpen}
+                  onAddToSession={onAddToSession}
+                  onDelete={onDelete}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </>
   )
 }

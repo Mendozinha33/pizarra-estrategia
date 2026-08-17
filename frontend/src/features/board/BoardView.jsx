@@ -8,6 +8,8 @@ import { Toolbar } from './Toolbar.jsx'
 /** Vista principal: bandeja de herramientas, campo y paneles laterales. */
 export function BoardView({ workspace, plays }) {
   const { editor, playback } = workspace
+  // Sugerencias del campo "Carpeta": las que el usuario ya ha creado.
+  const folderNames = [...new Set(plays.folders.map((entry) => entry.folder).filter(Boolean))]
 
   return (
     <>
@@ -77,6 +79,7 @@ export function BoardView({ workspace, plays }) {
         <SavePlayPanel
           draftMeta={workspace.draftMeta}
           onDraftMetaChange={workspace.setDraftMeta}
+          folderNames={folderNames}
           editingPlay={workspace.editingPlay}
           onSaveNew={workspace.savePlay}
           onUpdate={workspace.updatePlay}

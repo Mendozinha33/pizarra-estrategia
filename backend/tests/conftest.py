@@ -91,6 +91,22 @@ def client(anon_client: TestClient) -> TestClient:
     return anon_client
 
 
+COACH = {
+    "email": "entrenador@aravacacf.com",
+    "name": "Entrenador Cadete",
+    "password": "entrena-2026",
+}
+
+
+@pytest.fixture
+def coach(client: TestClient) -> dict:
+    """Un entrenador (no administrador) con su cabecera de sesión ya preparada."""
+    response = client.post("/api/users", json=COACH)
+    assert response.status_code == 201, response.text
+    token = login(client, COACH["email"], COACH["password"])
+    return {"user": response.json(), "headers": {"Authorization": f"Bearer {token}"}}
+
+
 @pytest.fixture
 def board() -> dict:
     return {

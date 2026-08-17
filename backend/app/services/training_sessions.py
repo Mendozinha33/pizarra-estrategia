@@ -3,7 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import SessionBlock, TrainingSession
+from app.models import SessionBlock, TrainingSession, User
 from app.schemas.training_session import (
     SessionBlockCreate,
     SessionBlockUpdate,
@@ -12,13 +12,26 @@ from app.schemas.training_session import (
 )
 
 
-def list_sessions(db: Session, *, limit: int = 50, offset: int = 0) -> list[TrainingSession]:
+def visible_owner(user: User) -> str | None:
+    """Dueño por el que filtrar: el administrador lo ve todo, el resto lo suyo."""
+    return None if user.is_admin else user.id
+
+
+def can_access(session: TrainingSession, user: User) -> bool:
+    return user.is_admin or session.owner_id == user.id
+
+
+def list_sessions(
+    db: Session, *, owner_id: str | None = None, limit: int = 50, offset: int = 0
+) -> list[TrainingSession]:
     stmt = (
         select(TrainingSession)
         .order_by(TrainingSession.created_at.desc())
         .offset(offset)
         .limit(limit)
     )
+    if owner_id is not None:
+        stmt = stmt.where(TrainingSession.owner_id == owner_id)
     return list(db.scalars(stmt))
 
 
@@ -26,8 +39,8 @@ def get_session(db: Session, session_id: str) -> TrainingSession | None:
     return db.get(TrainingSession, session_id)
 
 
-def create_session(db: Session, payload: TrainingSessionCreate) -> TrainingSession:
-    session = TrainingSession(**payload.model_dump())
+def create_session(db: Session, payload: TrainingSessionCreate, owner: User) -> TrainingSession:
+    session = TrainingSession(owner_id=owner.id, **payload.model_dump())
     db.add(session)
     db.commit()
     db.refresh(session)
@@ -49,13 +62,18 @@ def delete_session(db: Session, session: TrainingSession) -> None:
     db.commit()
 
 
-def get_or_create_default_session(db: Session) -> TrainingSession:
-    """Sesión de trabajo por defecto, para que la UI siempre tenga dónde escribir."""
-    stmt = select(TrainingSession).order_by(TrainingSession.created_at.desc()).limit(1)
+def get_or_create_default_session(db: Session, user: User) -> TrainingSession:
+    """Sesión de trabajo por defecto de cada usuario, para tener siempre dónde escribir."""
+    stmt = (
+        select(TrainingSession)
+        .where(TrainingSession.owner_id == user.id)
+        .order_by(TrainingSession.created_at.desc())
+        .limit(1)
+    )
     session = db.scalars(stmt).first()
     if session is not None:
         return session
-    return create_session(db, TrainingSessionCreate(title="Sesión de entrenamiento"))
+    return create_session(db, TrainingSessionCreate(title="Sesión de entrenamiento"), user)
 
 
 def _next_position(db: Session, session_id: str) -> int:

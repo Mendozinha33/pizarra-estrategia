@@ -117,3 +117,53 @@ def test_block_minutes_are_bounded(client: TestClient) -> None:
     assert (
         client.post(f"/api/sessions/{session_id}/blocks", json={"minutes": 0}).status_code == 422
     )
+
+
+# --------------------------------------------------------------------------- #
+# Cada entrenador tiene su propia sesión
+# --------------------------------------------------------------------------- #
+
+
+def test_cada_usuario_tiene_su_sesion_actual(client: TestClient, coach: dict) -> None:
+    del_admin = client.get("/api/sessions/current").json()["id"]
+    del_coach = client.get("/api/sessions/current", headers=coach["headers"]).json()["id"]
+
+    assert del_admin != del_coach, "no pueden compartir la misma sesión de trabajo"
+
+    suyas = client.get("/api/sessions", headers=coach["headers"]).json()
+    assert [session["id"] for session in suyas] == [del_coach]
+    # El administrador ve las dos.
+    assert {session["id"] for session in client.get("/api/sessions").json()} == {
+        del_admin,
+        del_coach,
+    }
+
+
+def test_no_se_toca_la_sesion_de_otro(client: TestClient, coach: dict) -> None:
+    ajena = client.get("/api/sessions/current").json()["id"]
+
+    assert client.get(f"/api/sessions/{ajena}", headers=coach["headers"]).status_code == 404
+    assert (
+        client.post(f"/api/sessions/{ajena}/blocks", json={}, headers=coach["headers"]).status_code
+        == 404
+    )
+    assert client.delete(f"/api/sessions/{ajena}", headers=coach["headers"]).status_code == 404
+
+
+def test_no_se_puede_meter_en_la_sesion_la_jugada_de_otro(
+    client: TestClient, coach: dict, play_payload: dict
+) -> None:
+    ajena = client.post("/api/plays", json=play_payload).json()["id"]
+    mi_sesion = client.get("/api/sessions/current", headers=coach["headers"]).json()["id"]
+
+    response = client.post(
+        f"/api/sessions/{mi_sesion}/blocks",
+        json={"play_id": ajena},
+        headers=coach["headers"],
+    )
+    assert response.status_code == 422
+
+
+def test_las_sesiones_piden_sesion_iniciada(anon_client: TestClient) -> None:
+    assert anon_client.get("/api/sessions").status_code == 401
+    assert anon_client.get("/api/sessions/current").status_code == 401

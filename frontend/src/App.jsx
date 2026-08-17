@@ -19,13 +19,19 @@ function Workspace() {
   const toast = useToast()
   const { user, isAdmin } = useAuth()
   const [view, setView] = useState('pizarra')
-  const [filters, setFilters] = useState({ category: '', search: '' })
+  // `kind` vacío = todas las carpetas; `folder` nulo = la carpeta fija entera.
+  const [filters, setFilters] = useState({ category: '', search: '', kind: '', folder: null })
   // Obligatorio si el administrador acaba de dar de alta o restablecer la contraseña.
   const [passwordDialog, setPasswordDialog] = useState(false)
 
   // El buscador no debe lanzar una petición por tecla.
   const debouncedSearch = useDebouncedValue(filters.search, 300)
-  const plays = usePlays({ category: filters.category, search: debouncedSearch })
+  const plays = usePlays({
+    category: filters.category,
+    search: debouncedSearch,
+    kind: filters.kind,
+    folder: filters.folder,
+  })
   const session = useTrainingSession()
   const workspace = useWorkspace(plays)
 

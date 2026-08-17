@@ -150,7 +150,8 @@ Variables de entorno con prefijo `PIZARRA_` (ver `backend/.env.example`):
 | `POST`   | `/api/users`                             | Dar de alta un usuario (administrador)      |
 | `PATCH`  | `/api/users/{id}`                        | Editar o bloquear (administrador)           |
 | `POST`   | `/api/users/{id}/password`               | Restablecer contraseña (administrador)      |
-| `GET`    | `/api/plays`                             | Lista jugadas (`category`, `search`, paginación) |
+| `GET`    | `/api/plays`                             | Lista jugadas (`category`, `kind`, `folder`, `search`, paginación) |
+| `GET`    | `/api/plays/folders`                     | Carpetas del usuario con el número de jugadas |
 | `POST`   | `/api/plays`                             | Crea una jugada                             |
 | `GET`    | `/api/plays/{id}`                        | Detalle                                     |
 | `PATCH`  | `/api/plays/{id}`                        | Actualización parcial                       |
@@ -185,6 +186,11 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
   unidades de pizarra sobre un campo de 1050×680. `role` y `colors` son opcionales: las
   jugadas guardadas antes de existir se leen con los colores por defecto y tomando el
   dorsal 1 como portero.
+- **Propiedad**: `Play` y `TrainingSession` llevan `owner_id`. Cada usuario ve y toca sólo lo
+  suyo; el administrador, todo. Lo que no es tuyo responde `404`, no `403`, para no revelar
+  que existe. `/api/sessions/current` devuelve la sesión de trabajo de cada usuario.
+- **Carpetas**: `Play.kind` es la carpeta fija (`partido` o `entrenamiento`) y `Play.folder`
+  la carpeta libre dentro de ella (cadena vacía = sin carpeta). Se crean solas al guardar.
 - **TrainingSession** → **SessionBlock**: título, minutos, consignas y jugada asociada.
   Borrar una jugada deja el bloque en pie, sin diagrama (`ON DELETE SET NULL`); borrar una
   sesión arrastra sus bloques.
@@ -221,9 +227,12 @@ sin cubrir justo lo que puede fallar en producción (`JSONB`, los `ON DELETE`, l
   CASCADE` y `ON DELETE SET NULL` reales, y las relaciones usan `passive_deletes`:
   PostgreSQL lo resuelve en una sentencia y el dato queda íntegro aunque alguien toque la
   base a mano.
-- **Esquema al arrancar.** `Base.metadata.create_all` es suficiente mientras el esquema
-  esté quieto. En cuanto empiece a cambiar en producción, mete Alembic: los modelos ya
-  están aislados para eso.
+- **Esquema al arrancar.** `Base.metadata.create_all` crea las tablas que faltan, pero nunca
+  añade columnas a una tabla que ya existe. Las columnas posteriores al primer despliegue
+  (`owner_id`, `kind`, `folder`) se aplican en `app/db/upgrade.py` con sentencias
+  idempotentes que corren en cada arranque; ahí mismo se adopta lo guardado cuando todavía
+  no había usuarios. Es un parche consciente: en cuanto el esquema se mueva más, mete
+  Alembic — los modelos ya están aislados para eso.
 - **Guardado con debounce.** Los campos de la sesión se escriben en local al instante y se
   envían tras 600 ms, acumulando los cambios pendientes del bloque para que editar el
   título y acto seguido los minutos no descarte lo primero.

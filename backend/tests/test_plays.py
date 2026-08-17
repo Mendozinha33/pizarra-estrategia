@@ -145,3 +145,125 @@ def test_rejects_invalid_color_or_role(
 
     bad_role = {**board, "players": [{**board["players"][0], "role": "delantero"}]}
     assert client.post("/api/plays", json={**play_payload, "board": bad_role}).status_code == 422
+
+
+# --------------------------------------------------------------------------- #
+# Cada uno ve lo suyo; el administrador, todo
+# --------------------------------------------------------------------------- #
+
+
+def test_el_entrenador_solo_ve_lo_suyo(
+    client: TestClient, coach: dict, play_payload: dict
+) -> None:
+    client.post("/api/plays", json={**play_payload, "name": "Del administrador"})
+    client.post(
+        "/api/plays", json={**play_payload, "name": "Del entrenador"}, headers=coach["headers"]
+    )
+
+    suyas = client.get("/api/plays", headers=coach["headers"]).json()
+    assert [play["name"] for play in suyas] == ["Del entrenador"]
+
+    # El administrador ve las dos y sabe de quién es cada una.
+    todas = client.get("/api/plays").json()
+    assert {play["name"] for play in todas} == {"Del administrador", "Del entrenador"}
+    del_entrenador = next(play for play in todas if play["name"] == "Del entrenador")
+    assert del_entrenador["owner_name"] == coach["user"]["name"]
+
+
+def test_no_se_puede_abrir_ni_borrar_la_jugada_de_otro(
+    client: TestClient, coach: dict, play_payload: dict
+) -> None:
+    ajena = client.post("/api/plays", json=play_payload).json()["id"]
+
+    assert client.get(f"/api/plays/{ajena}", headers=coach["headers"]).status_code == 404
+    assert (
+        client.patch(
+            f"/api/plays/{ajena}", json={"name": "Mía ahora"}, headers=coach["headers"]
+        ).status_code
+        == 404
+    )
+    assert client.delete(f"/api/plays/{ajena}", headers=coach["headers"]).status_code == 404
+    # Y sigue intacta para su dueño.
+    assert client.get(f"/api/plays/{ajena}").status_code == 200
+
+
+def test_el_administrador_si_puede_abrir_la_del_entrenador(
+    client: TestClient, coach: dict, play_payload: dict
+) -> None:
+    ajena = client.post("/api/plays", json=play_payload, headers=coach["headers"]).json()["id"]
+    assert client.get(f"/api/plays/{ajena}").status_code == 200
+
+
+def test_hay_que_iniciar_sesion(anon_client: TestClient, play_payload: dict) -> None:
+    assert anon_client.get("/api/plays").status_code == 401
+    assert anon_client.post("/api/plays", json=play_payload).status_code == 401
+
+
+# --------------------------------------------------------------------------- #
+# Carpetas
+# --------------------------------------------------------------------------- #
+
+
+def test_tipo_y_carpeta_por_defecto(client: TestClient, play_payload: dict) -> None:
+    creada = client.post("/api/plays", json=play_payload).json()
+    assert creada["kind"] == "entrenamiento"
+    assert creada["folder"] == ""
+
+
+def test_filtrar_por_tipo_y_carpeta(client: TestClient, play_payload: dict) -> None:
+    client.post(
+        "/api/plays",
+        json={**play_payload, "name": "Córner rival", "kind": "partido", "folder": "Jornada 3"},
+    )
+    client.post(
+        "/api/plays",
+        json={**play_payload, "name": "Rondo", "kind": "entrenamiento", "folder": "Martes"},
+    )
+    client.post("/api/plays", json={**play_payload, "name": "Suelta"})
+
+    partidos = client.get("/api/plays", params={"kind": "partido"}).json()
+    assert [play["name"] for play in partidos] == ["Córner rival"]
+
+    en_martes = client.get("/api/plays", params={"folder": "Martes"}).json()
+    assert [play["name"] for play in en_martes] == ["Rondo"]
+
+    # La carpeta vacía es un filtro válido: las jugadas sueltas.
+    sueltas = client.get("/api/plays", params={"folder": ""}).json()
+    assert [play["name"] for play in sueltas] == ["Suelta"]
+
+
+def test_el_nombre_de_carpeta_se_limpia(client: TestClient, play_payload: dict) -> None:
+    creada = client.post("/api/plays", json={**play_payload, "folder": "  Semana  1  "}).json()
+    assert creada["folder"] == "Semana 1"
+
+
+def test_listado_de_carpetas_por_usuario(
+    client: TestClient, coach: dict, play_payload: dict
+) -> None:
+    client.post("/api/plays", json={**play_payload, "kind": "partido", "folder": "Jornada 3"})
+    client.post("/api/plays", json={**play_payload, "kind": "partido", "folder": "Jornada 3"})
+    client.post(
+        "/api/plays",
+        json={**play_payload, "folder": "Del entrenador"},
+        headers=coach["headers"],
+    )
+
+    del_admin = client.get("/api/plays/folders").json()
+    assert {"kind": "partido", "folder": "Jornada 3", "count": 2} in del_admin
+
+    del_coach = client.get("/api/plays/folders", headers=coach["headers"]).json()
+    assert del_coach == [{"kind": "entrenamiento", "folder": "Del entrenador", "count": 1}]
+
+
+def test_mover_una_jugada_de_carpeta(client: TestClient, play_payload: dict) -> None:
+    play_id = client.post("/api/plays", json=play_payload).json()["id"]
+
+    movida = client.patch(
+        f"/api/plays/{play_id}", json={"kind": "partido", "folder": "Jornada 4"}
+    ).json()
+    assert movida["kind"] == "partido"
+    assert movida["folder"] == "Jornada 4"
+
+
+def test_rechaza_un_tipo_desconocido(client: TestClient, play_payload: dict) -> None:
+    assert client.post("/api/plays", json={**play_payload, "kind": "amistoso"}).status_code == 422
