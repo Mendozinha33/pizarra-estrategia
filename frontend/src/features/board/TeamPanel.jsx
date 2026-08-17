@@ -1,6 +1,28 @@
-import { COLORS, SURFACE_OPTIONS } from '../../lib/constants.js'
+import { SURFACE_OPTIONS } from '../../lib/constants.js'
 import { formationNames } from '../../lib/formations.js'
 import { Icon } from '../../components/ui/Icon.jsx'
+
+/** Pareja de selectores de color de un equipo: jugadores de campo y portero. */
+function TeamColorPicker({ team, label, colors, onChange }) {
+  return (
+    <div className="colors">
+      {[
+        ['player', 'Jugadores'],
+        ['gk', 'Portero'],
+      ].map(([kind, kindLabel]) => (
+        <label key={kind} className="colorpick">
+          <input
+            type="color"
+            value={colors[kind]}
+            aria-label={`Color de ${kindLabel.toLowerCase()} · ${label}`}
+            onChange={(e) => onChange(team, kind, e.target.value)}
+          />
+          {kindLabel}
+        </label>
+      ))}
+    </div>
+  )
+}
 
 /** Columna izquierda: equipos, formaciones y superficie de juego. */
 export function TeamPanel({
@@ -13,6 +35,7 @@ export function TeamPanel({
   onSurfaceChange,
 }) {
   const options = formationNames(editor.formationSize)
+  const colors = editor.colors
 
   return (
     <div>
@@ -40,7 +63,7 @@ export function TeamPanel({
         </div>
 
         <label className="f" htmlFor="home-name">
-          <span className="teamdot" style={{ background: COLORS.home }} />
+          <span className="teamdot" style={{ background: colors.home.player }} />
           Equipo propio
         </label>
         <input id="home-name" value={homeName} onChange={(e) => onHomeNameChange(e.target.value)} />
@@ -56,9 +79,15 @@ export function TeamPanel({
             </option>
           ))}
         </select>
+        <TeamColorPicker
+          team="home"
+          label="Equipo propio"
+          colors={colors.home}
+          onChange={editor.setTeamColor}
+        />
 
         <label className="f" htmlFor="away-name">
-          <span className="teamdot" style={{ background: COLORS.away }} />
+          <span className="teamdot" style={{ background: colors.away.player }} />
           Rival
         </label>
         <input id="away-name" value={awayName} onChange={(e) => onAwayNameChange(e.target.value)} />
@@ -74,6 +103,12 @@ export function TeamPanel({
             </option>
           ))}
         </select>
+        <TeamColorPicker
+          team="away"
+          label="Rival"
+          colors={colors.away}
+          onChange={editor.setTeamColor}
+        />
 
         <div className="row" style={{ marginTop: 8 }}>
           <button

@@ -179,9 +179,12 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
 - **Play**: nombre, categoría (`Ataque`, `Defensa`, `ABP`, `Entrenamiento`), superficie
   (`full`, `half`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo, consignas y
   el `board`.
-- **Board** (documento `JSONB` validado): `players`, `items` (conos y balones), `shapes`
-  (`run`, `pass`, `dribble`, `free`, `zone`, `text`) y `ball`. Coordenadas en unidades de
-  pizarra sobre un campo de 1050×680.
+- **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`), `items`
+  (conos y balones), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball` y
+  `colors` (color de ficha de jugador y de portero para `home` y `away`). Coordenadas en
+  unidades de pizarra sobre un campo de 1050×680. `role` y `colors` son opcionales: las
+  jugadas guardadas antes de existir se leen con los colores por defecto y tomando el
+  dorsal 1 como portero.
 - **TrainingSession** → **SessionBlock**: título, minutos, consignas y jugada asociada.
   Borrar una jugada deja el bloque en pie, sin diagrama (`ON DELETE SET NULL`); borrar una
   sesión arrastra sus bloques.

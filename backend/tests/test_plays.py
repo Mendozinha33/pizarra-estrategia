@@ -106,3 +106,42 @@ def test_rejects_malformed_formation(client: TestClient, play_payload: dict) -> 
 
 def test_rejects_unknown_category(client: TestClient, play_payload: dict) -> None:
     assert client.post("/api/plays", json={**play_payload, "category": "Otra"}).status_code == 422
+
+
+def test_board_colors_default_when_absent(client: TestClient, play_payload: dict) -> None:
+    """Las jugadas guardadas antes de poder elegir color se leen con los de siempre."""
+    created = client.post("/api/plays", json=play_payload).json()
+
+    assert created["board"]["colors"]["home"] == {"player": "#F4F7F3", "gk": "#FFD447"}
+    assert created["board"]["colors"]["away"] == {"player": "#D6274B", "gk": "#2B6CF6"}
+    assert created["board"]["players"][0]["role"] is None
+
+
+def test_board_colors_and_goalkeeper_round_trip(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    board = {
+        **board,
+        "players": [{**board["players"][0], "role": "gk"}, board["players"][1]],
+        "colors": {
+            "home": {"player": "#1B7F3B", "gk": "#FFFFFF"},
+            "away": {"player": "#000", "gk": "#FF8A3D"},
+        },
+    }
+    created = client.post("/api/plays", json={**play_payload, "board": board}).json()
+
+    stored = client.get(f"/api/plays/{created['id']}").json()["board"]
+    assert stored["colors"]["home"]["player"] == "#1B7F3B"
+    assert stored["colors"]["away"]["gk"] == "#FF8A3D"
+    assert stored["players"][0]["role"] == "gk"
+    assert stored["players"][1]["role"] is None
+
+
+def test_rejects_invalid_color_or_role(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    bad_color = {**board, "colors": {"home": {"player": "verde", "gk": "#FFF"}}}
+    assert client.post("/api/plays", json={**play_payload, "board": bad_color}).status_code == 422
+
+    bad_role = {**board, "players": [{**board["players"][0], "role": "delantero"}]}
+    assert client.post("/api/plays", json={**play_payload, "board": bad_role}).status_code == 422

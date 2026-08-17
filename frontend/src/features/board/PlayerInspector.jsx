@@ -1,3 +1,5 @@
+import { isGoalkeeper } from '../../lib/colors.js'
+
 /** Edición del dorsal seleccionado. */
 export function PlayerInspector({ player, onChange }) {
   return (
@@ -25,11 +27,20 @@ export function PlayerInspector({ player, onChange }) {
             placeholder="Opcional"
             onChange={(e) => onChange(player.id, { name: e.target.value })}
           />
+
+          <label className="check" style={{ marginTop: 10 }}>
+            <input
+              type="checkbox"
+              checked={isGoalkeeper(player)}
+              onChange={(e) => onChange(player.id, { role: e.target.checked ? 'gk' : 'field' })}
+            />
+            Es portero (lleva el color de portero)
+          </label>
         </>
       ) : (
         <p className="hint">
-          Toca un jugador con la herramienta <strong>Mover</strong> para cambiar su dorsal o su
-          nombre.
+          Toca un jugador con la herramienta <strong>Mover</strong> para cambiar su dorsal, su
+          nombre o marcarlo como portero.
         </p>
       )}
     </div>

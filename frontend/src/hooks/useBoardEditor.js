@@ -1,5 +1,6 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
 
+import { teamColorsOf } from '../lib/colors.js'
 import { SURFACES, UNDO_DEPTH } from '../lib/constants.js'
 import { buildTeam, DEFAULT_FORMATION, emptyBoard, formationNames } from '../lib/formations.js'
 import { distance, toBoardPoint, uid } from '../lib/geometry.js'
@@ -227,7 +228,12 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
   )
 
   const resetField = useCallback(() => {
-    commit({ ...emptyBoard(), players: buildTeam('home', homeFormation, formationSize) })
+    // Vaciar el campo no debe deshacer los colores elegidos para las fichas.
+    commit((current) => ({
+      ...emptyBoard(),
+      colors: teamColorsOf(current),
+      players: buildTeam('home', homeFormation, formationSize),
+    }))
     setSelectedId(null)
   }, [commit, homeFormation, formationSize])
 
@@ -236,7 +242,21 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     [commit],
   )
 
-  /** Edición en vivo de un jugador (dorsal/nombre): no ensucia el historial. */
+  /**
+   * Color de las fichas de un equipo. Como el selector de color dispara un
+   * cambio por cada movimiento del ratón, no se apila en el historial.
+   */
+  const setTeamColor = useCallback(
+    (team, kind, hex) => {
+      setBoard((current) => {
+        const colors = teamColorsOf(current)
+        return { ...current, colors: { ...colors, [team]: { ...colors[team], [kind]: hex } } }
+      })
+    },
+    [setBoard],
+  )
+
+  /** Edición en vivo de un jugador (dorsal/nombre/portero): no ensucia el historial. */
   const updatePlayer = useCallback((playerId, changes) => {
     setBoard((current) => ({
       ...current,
@@ -251,7 +271,8 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
    */
   const loadBoard = useCallback(
     (nextBoard, meta = {}) => {
-      commit(structuredClone(nextBoard))
+      const loaded = structuredClone(nextBoard)
+      commit({ ...loaded, colors: teamColorsOf(loaded) })
       setSelectedId(null)
 
       const size = meta.formationSize ?? formationSize
@@ -286,6 +307,8 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     resetField,
     clearAnnotations,
     updatePlayer,
+    setTeamColor,
+    colors: teamColorsOf(board),
     loadBoard,
   }
 }

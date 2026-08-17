@@ -10,8 +10,17 @@ export const COLORS = {
   mint: '#3FE0B0',
   grass: '#0E6B4F',
   grassAlt: '#0B5C43',
-  home: '#F4F7F3',
-  away: '#D6274B',
+}
+
+/**
+ * Colores por defecto de las fichas. Cada jugada guarda los suyos en
+ * `board.colors`; esto es sólo el punto de partida y el valor de respaldo para
+ * las jugadas guardadas antes de poder elegirlos.
+ * Deben coincidir con `DEFAULT_COLORS` del backend.
+ */
+export const TEAM_COLORS = {
+  home: { player: '#F4F7F3', gk: '#FFD447' },
+  away: { player: '#D6274B', gk: '#2B6CF6' },
 }
 
 /** Dimensiones del campo en unidades de pizarra (deben coincidir con el backend). */
@@ -53,6 +62,13 @@ export const TOOLS = [
 
 /** Trazos que la reproducción sabe animar. */
 export const MOVEMENT_SHAPES = new Set(['run', 'dribble', 'free'])
+
+/**
+ * Trazos que se ocultan mientras se reproduce la jugada: las flechas y líneas
+ * estorban cuando los dorsales ya las están recorriendo. Las zonas y las
+ * etiquetas siguen viéndose porque son contexto, no movimiento.
+ */
+export const PLAYBACK_HIDDEN_SHAPES = new Set(['run', 'pass', 'dribble', 'free'])
 
 export const ANIMATION_MS = 2600
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { useToast } from '../components/ui/Toast.jsx'
+import { teamColorsOf } from '../lib/colors.js'
 import { PEN_COLORS, TOOLS } from '../lib/constants.js'
 import { exportSvgToPng } from '../lib/exportPng.js'
 import { useBoardEditor } from './useBoardEditor.js'
@@ -55,6 +56,7 @@ export function useWorkspace(plays) {
       items: editor.board.items,
       shapes: editor.board.shapes,
       ball: editor.board.ball,
+      colors: teamColorsOf(editor.board),
     }),
     [editor.board],
   )

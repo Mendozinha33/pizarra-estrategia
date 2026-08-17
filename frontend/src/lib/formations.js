@@ -5,7 +5,7 @@
  * equipo local (ataca hacia la derecha). El rival se refleja al colocarse.
  */
 
-import { PITCH } from './constants.js'
+import { PITCH, TEAM_COLORS } from './constants.js'
 import { uid } from './geometry.js'
 
 export const FORMATIONS_11 = {
@@ -81,6 +81,8 @@ export function buildTeam(team, formation, size) {
     team,
     num: String(num),
     name: '',
+    // En todas las formaciones el dorsal 1 es el portero.
+    role: num === 1 ? 'gk' : 'field',
     x: (mirrored ? 1 - fx : fx) * PITCH.width,
     y: (mirrored ? 1 - fy : fy) * PITCH.height,
   }))
@@ -92,5 +94,6 @@ export function emptyBoard() {
     items: [],
     shapes: [],
     ball: { x: PITCH.width / 2, y: PITCH.height / 2 },
+    colors: structuredClone(TEAM_COLORS),
   }
 }

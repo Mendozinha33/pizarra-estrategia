@@ -1,6 +1,7 @@
 import { memo } from 'react'
 
-import { COLORS, PEN_COLORS, SURFACES } from '../../lib/constants.js'
+import { inkOn, teamColorsOf, tokenColor } from '../../lib/colors.js'
+import { COLORS, PEN_COLORS, PLAYBACK_HIDDEN_SHAPES, SURFACES } from '../../lib/constants.js'
 import { BoardShape } from './BoardShape.jsx'
 import { PitchMarkings } from './PitchMarkings.jsx'
 
@@ -19,8 +20,8 @@ function Ball({ x, y, draggable, onPointerDown }) {
   )
 }
 
-function PlayerToken({ player, position, selected, cursor, onPointerDown }) {
-  const isHome = player.team === 'home'
+function PlayerToken({ player, position, colors, selected, cursor, onPointerDown }) {
+  const fill = tokenColor(player, colors)
   return (
     <g
       transform={`translate(${position.x},${position.y})`}
@@ -30,7 +31,7 @@ function PlayerToken({ player, position, selected, cursor, onPointerDown }) {
       <ellipse cx="0" cy="21" rx="17" ry="5" fill="rgba(0,0,0,.28)" />
       <circle
         r="20"
-        fill={isHome ? COLORS.home : COLORS.away}
+        fill={fill}
         stroke={selected ? COLORS.mint : 'rgba(0,0,0,.45)'}
         strokeWidth={selected ? 4 : 2.5}
       />
@@ -41,7 +42,7 @@ function PlayerToken({ player, position, selected, cursor, onPointerDown }) {
         fontSize="23"
         fontWeight="700"
         fontFamily="'Barlow Condensed', sans-serif"
-        fill={isHome ? COLORS.ink : '#fff'}
+        fill={inkOn(fill)}
       >
         {player.num}
       </text>
@@ -88,6 +89,12 @@ function BoardCanvasBase({
   const eraseMode = !readOnly && tool === 'erase'
   const positionOf = (player) => animation?.players[player.id] ?? player
   const ball = animation?.ball ?? board.ball
+  const colors = teamColorsOf(board)
+  // Durante la reproducción se esconden las flechas y líneas: el movimiento ya
+  // lo cuentan los dorsales.
+  const shapes = animation
+    ? board.shapes.filter((shape) => !PLAYBACK_HIDDEN_SHAPES.has(shape.type))
+    : board.shapes
 
   const eraseHandler = (id, kind) => (event) => {
     event.stopPropagation()
@@ -163,7 +170,7 @@ function BoardCanvasBase({
         ),
       )}
 
-      {board.shapes.map((shape) => (
+      {shapes.map((shape) => (
         <BoardShape key={shape.id} shape={shape} eraseMode={eraseMode} onErase={onErase} />
       ))}
 
@@ -185,6 +192,7 @@ function BoardCanvasBase({
           key={player.id}
           player={player}
           position={positionOf(player)}
+          colors={colors}
           selected={selectedId === player.id}
           cursor={readOnly ? 'default' : eraseMode ? 'pointer' : 'grab'}
           onPointerDown={readOnly ? undefined : (event) => onPointerDown(event, { player: player.id })}

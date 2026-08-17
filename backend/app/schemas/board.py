@@ -56,6 +56,20 @@ class ItemKind(StrEnum):
     BALL = "ball"
 
 
+class PlayerRole(StrEnum):
+    FIELD = "field"
+    GK = "gk"
+
+
+# Colores por defecto de las fichas; deben coincidir con `TEAM_COLORS` del frontend.
+DEFAULT_COLORS = {
+    "home": {"player": "#F4F7F3", "gk": "#FFD447"},
+    "away": {"player": "#D6274B", "gk": "#2B6CF6"},
+}
+
+HEX_COLOR = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+
+
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -72,6 +86,9 @@ class Player(StrictModel):
     name: str = Field(default="", max_length=40)
     x: Coordinate
     y: Coordinate
+    # Sin valor en las jugadas antiguas: entonces el frontend toma el dorsal 1
+    # como portero.
+    role: PlayerRole | None = None
 
 
 class BoardItem(StrictModel):
@@ -84,9 +101,21 @@ class BoardItem(StrictModel):
 class Shape(StrictModel):
     id: str = Field(min_length=1, max_length=40)
     type: ShapeType
-    color: str = Field(pattern=r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+    color: str = Field(pattern=HEX_COLOR)
     points: list[Point] = Field(min_length=1, max_length=2000)
     text: str = Field(default="", max_length=80)
+
+
+class TeamColors(StrictModel):
+    """Color de las fichas de un equipo: jugadores de campo y portero."""
+
+    player: str = Field(pattern=HEX_COLOR)
+    gk: str = Field(pattern=HEX_COLOR)
+
+
+class BoardColors(StrictModel):
+    home: TeamColors = Field(default_factory=lambda: TeamColors(**DEFAULT_COLORS["home"]))
+    away: TeamColors = Field(default_factory=lambda: TeamColors(**DEFAULT_COLORS["away"]))
 
 
 class Board(StrictModel):
@@ -94,3 +123,6 @@ class Board(StrictModel):
     items: list[BoardItem] = Field(default_factory=list, max_length=200)
     shapes: list[Shape] = Field(default_factory=list, max_length=200)
     ball: Point = Field(default_factory=lambda: Point(x=PITCH_WIDTH / 2, y=PITCH_HEIGHT / 2))
+    # Ausente en las jugadas guardadas antes de poder elegir color: se rellena
+    # con los colores por defecto al leerlas.
+    colors: BoardColors = Field(default_factory=BoardColors)
