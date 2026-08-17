@@ -67,6 +67,7 @@ export const TOOLS = [
   { id: 'free', icon: 'pen', label: 'Trazo libre', key: 'l' },
   { id: 'zone', icon: 'square', label: 'Zona', key: 'z' },
   { id: 'text', icon: 'type', label: 'Etiqueta', key: 't' },
+  { id: 'ball', icon: 'ball', label: 'Colocar balón', key: 'n' },
   { id: 'cone', icon: 'triangle', label: 'Cono', key: 'o' },
   { id: 'extraBall', icon: 'circle', label: 'Balón extra', key: 'b' },
   { id: 'erase', icon: 'eraser', label: 'Borrar', key: 'e' },

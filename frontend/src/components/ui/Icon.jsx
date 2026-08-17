@@ -33,6 +33,12 @@ const PATHS = {
   ),
   triangle: <polygon points="12 3 21 20 3 20" />,
   circle: <circle cx="12" cy="12" r="8" />,
+  ball: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 7.5l3.4 2.5-1.3 4h-4.2l-1.3-4z" />
+    </>
+  ),
   eraser: (
     <>
       <path d="M20 20H8l-5-5a2 2 0 0 1 0-3l9-9a2 2 0 0 1 3 0l7 7a2 2 0 0 1 0 3l-6 6" />

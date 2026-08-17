@@ -7,12 +7,12 @@ import { PitchMarkings } from './PitchMarkings.jsx'
 
 const STRIPES = Array.from({ length: 10 }, (_, i) => i)
 
-function Ball({ x, y, draggable, onPointerDown }) {
+function Ball({ x, y, cursor, interactive, onPointerDown }) {
   return (
     <g
       transform={`translate(${x},${y})`}
-      onPointerDown={draggable ? (event) => onPointerDown(event, { ball: true }) : undefined}
-      style={{ cursor: draggable ? 'grab' : 'default' }}
+      onPointerDown={interactive ? (event) => onPointerDown(event, { ball: true }) : undefined}
+      style={{ cursor }}
     >
       <circle r="13" fill="#fff" stroke="rgba(0,0,0,.45)" strokeWidth="2.5" />
       <path d="M0,-7 L6,-2 L4,5 L-4,5 L-6,-2 Z" fill={COLORS.ink} opacity=".85" />
@@ -88,7 +88,7 @@ function BoardCanvasBase({
   const view = SURFACES[surface] ?? SURFACES.full
   const eraseMode = !readOnly && tool === 'erase'
   const positionOf = (player) => animation?.players[player.id] ?? player
-  const ball = animation?.ball ?? board.ball
+  const ball = animation?.ball ?? board.ball ?? null
   const colors = teamColorsOf(board)
   // Durante la reproducción se esconden las flechas y líneas: el movimiento ya
   // lo cuentan los dorsales.
@@ -180,12 +180,16 @@ function BoardCanvasBase({
         </g>
       )}
 
-      <Ball
-        x={ball.x}
-        y={ball.y}
-        draggable={!readOnly && tool === 'select'}
-        onPointerDown={onPointerDown}
-      />
+      {/* El balón es opcional: la jugada puede empezar sin él. */}
+      {ball && (
+        <Ball
+          x={ball.x}
+          y={ball.y}
+          interactive={!readOnly && (tool === 'select' || eraseMode)}
+          cursor={readOnly ? 'default' : eraseMode ? 'pointer' : tool === 'select' ? 'grab' : 'default'}
+          onPointerDown={onPointerDown}
+        />
+      )}
 
       {board.players.map((player) => (
         <PlayerToken

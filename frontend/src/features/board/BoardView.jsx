@@ -70,7 +70,8 @@ export function BoardView({ workspace, plays }) {
             Arrastra los dorsales con la herramienta <strong>Mover</strong>. Dibuja los
             desplazamientos partiendo desde el jugador y pulsa{' '}
             <strong>Reproducir jugada</strong>: los dorsales recorren sus flechas y el balón sigue
-            los pases en orden.
+            los pases en orden. Con <strong>Colocar balón</strong> lo pones donde quieras que
+            empiece, y puedes quitarlo del campo si la jugada no lo necesita.
           </p>
 
           <PlayerInspector player={editor.selectedPlayer} onChange={editor.updatePlayer} />

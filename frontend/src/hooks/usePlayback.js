@@ -47,7 +47,9 @@ export function usePlayback(board, { onWarn } = {}) {
     const passPoints = board.shapes
       .filter((shape) => shape.type === 'pass')
       .flatMap((shape) => shape.points)
-    const ballRoute = passPoints.length > 1 ? [board.ball, ...passPoints] : null
+    // Si el entrenador ha quitado el balón del campo, los pases se dibujan pero
+    // no hay nada que mover.
+    const ballRoute = board.ball && passPoints.length > 1 ? [board.ball, ...passPoints] : null
 
     if (Object.keys(routes).length === 0 && !ballRoute) {
       onWarn?.('Dibuja un desplazamiento o un pase para poder reproducirlo')

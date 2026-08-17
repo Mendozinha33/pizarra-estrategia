@@ -132,6 +132,13 @@ export function TeamPanel({
         </div>
 
         <div className="row" style={{ marginTop: 8 }}>
+          <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={editor.toggleBall}>
+            <Icon name="ball" size={14} />
+            {editor.board.ball ? 'Quitar balón' : 'Poner balón'}
+          </button>
+        </div>
+
+        <div className="row" style={{ marginTop: 8 }}>
           <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={editor.resetField}>
             <Icon name="rotate" size={14} />
             Reiniciar campo

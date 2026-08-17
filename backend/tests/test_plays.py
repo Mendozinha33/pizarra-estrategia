@@ -267,3 +267,36 @@ def test_mover_una_jugada_de_carpeta(client: TestClient, play_payload: dict) -> 
 
 def test_rechaza_un_tipo_desconocido(client: TestClient, play_payload: dict) -> None:
     assert client.post("/api/plays", json={**play_payload, "kind": "amistoso"}).status_code == 422
+
+
+# --------------------------------------------------------------------------- #
+# El balón es opcional
+# --------------------------------------------------------------------------- #
+
+
+def test_se_puede_guardar_una_jugada_sin_balon(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    sin_balon = client.post(
+        "/api/plays", json={**play_payload, "board": {**board, "ball": None}}
+    ).json()
+
+    assert sin_balon["board"]["ball"] is None
+    assert client.get(f"/api/plays/{sin_balon['id']}").json()["board"]["ball"] is None
+
+
+def test_el_balon_va_donde_lo_pongas(client: TestClient, play_payload: dict, board: dict) -> None:
+    colocado = {**board, "ball": {"x": 180.0, "y": 90.0}}
+    creada = client.post("/api/plays", json={**play_payload, "board": colocado}).json()
+
+    assert creada["board"]["ball"] == {"x": 180.0, "y": 90.0}
+
+
+def test_sin_indicar_balon_se_pone_en_el_centro(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    """Las jugadas guardadas antes de poder quitarlo siguen teniéndolo."""
+    sin_campo = {key: value for key, value in board.items() if key != "ball"}
+    creada = client.post("/api/plays", json={**play_payload, "board": sin_campo}).json()
+
+    assert creada["board"]["ball"] == {"x": 525.0, "y": 340.0}

@@ -181,11 +181,12 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
   (`full`, `half`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo, consignas y
   el `board`.
 - **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`), `items`
-  (conos y balones), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball` y
-  `colors` (color de ficha de jugador y de portero para `home` y `away`). Coordenadas en
-  unidades de pizarra sobre un campo de 1050×680. `role` y `colors` son opcionales: las
-  jugadas guardadas antes de existir se leen con los colores por defecto y tomando el
-  dorsal 1 como portero.
+  (conos y balones), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
+  (nulo si la jugada empieza sin balón) y `colors` (color de ficha de jugador y de portero
+  para `home` y `away`). Coordenadas en unidades de pizarra sobre un campo de 1050×680.
+  `role` y `colors` son opcionales: las jugadas guardadas antes de existir se leen con los
+  colores por defecto y tomando el dorsal 1 como portero. Omitir `ball` lo coloca en el
+  centro; enviarlo a `null` es lo que deja el campo sin balón.
 - **Propiedad**: `Play` y `TrainingSession` llevan `owner_id`. Cada usuario ve y toca sólo lo
   suyo; el administrador, todo. Lo que no es tuyo responde `404`, no `403`, para no revelar
   que existe. `/api/sessions/current` devuelve la sesión de trabajo de cada usuario.
@@ -239,5 +240,5 @@ sin cubrir justo lo que puede fallar en producción (`JSONB`, los `ON DELETE`, l
 - **Historial en un reducer.** Tablero e historial de deshacer viven en la misma
   transición de estado, de modo que no pueden desincronizarse.
 - **Atajos de teclado.** `V` mover, `D` desplazamiento, `P` pase, `C` conducción, `L`
-  trazo libre, `Z` zona, `T` etiqueta, `O` cono, `B` balón, `E` borrar, `Ctrl/Cmd+Z`
-  deshacer.
+  trazo libre, `Z` zona, `T` etiqueta, `N` colocar balón, `O` cono, `B` balón extra, `E`
+  borrar, `Ctrl/Cmd+Z` deshacer.

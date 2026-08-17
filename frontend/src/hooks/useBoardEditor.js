@@ -1,7 +1,7 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
 
 import { teamColorsOf } from '../lib/colors.js'
-import { SURFACES, UNDO_DEPTH } from '../lib/constants.js'
+import { PITCH, SURFACES, UNDO_DEPTH } from '../lib/constants.js'
 import { buildTeam, DEFAULT_FORMATION, emptyBoard, formationNames } from '../lib/formations.js'
 import { distance, toBoardPoint, uid } from '../lib/geometry.js'
 
@@ -94,6 +94,11 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
       }
 
       if (target?.ball) {
+        if (tool === 'erase') {
+          commit((current) => ({ ...current, ball: null }))
+          return
+        }
+        if (tool !== 'select') return
         event.stopPropagation()
         event.currentTarget.setPointerCapture?.(event.pointerId)
         pushHistory()
@@ -103,6 +108,12 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
 
       if (tool === 'select') {
         setSelectedId(null)
+        return
+      }
+
+      // Coloca el balón donde se toca, aunque se hubiera quitado del campo.
+      if (tool === 'ball') {
+        commit((current) => ({ ...current, ball: point }))
         return
       }
 
@@ -242,6 +253,15 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     [commit],
   )
 
+  /** Quita el balón del campo o lo devuelve al centro. */
+  const toggleBall = useCallback(() => {
+    commit((current) =>
+      current.ball
+        ? { ...current, ball: null }
+        : { ...current, ball: { x: PITCH.width / 2, y: PITCH.height / 2 } },
+    )
+  }, [commit])
+
   /**
    * Color de las fichas de un equipo. Como el selector de color dispara un
    * cambio por cada movimiento del ratón, no se apila en el historial.
@@ -307,6 +327,7 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     resetField,
     clearAnnotations,
     updatePlayer,
+    toggleBall,
     setTeamColor,
     colors: teamColorsOf(board),
     loadBoard,

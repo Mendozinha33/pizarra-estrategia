@@ -122,7 +122,11 @@ class Board(StrictModel):
     players: list[Player] = Field(default_factory=list, max_length=40)
     items: list[BoardItem] = Field(default_factory=list, max_length=200)
     shapes: list[Shape] = Field(default_factory=list, max_length=200)
-    ball: Point = Field(default_factory=lambda: Point(x=PITCH_WIDTH / 2, y=PITCH_HEIGHT / 2))
+    # Nulo cuando la jugada empieza sin balón. Si no viene el campo (jugadas
+    # antiguas o creadas a mano), se coloca en el centro como siempre.
+    ball: Point | None = Field(
+        default_factory=lambda: Point(x=PITCH_WIDTH / 2, y=PITCH_HEIGHT / 2)
+    )
     # Ausente en las jugadas guardadas antes de poder elegir color: se rellena
     # con los colores por defecto al leerlas.
     colors: BoardColors = Field(default_factory=BoardColors)
