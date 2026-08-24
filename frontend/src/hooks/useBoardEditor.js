@@ -95,6 +95,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
 
   const [draft, setDraft] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
+  const [selectedItemId, setSelectedItemId] = useState(null)
 
   const svgRef = useRef(null)
   const dragRef = useRef(null)
@@ -138,6 +139,26 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
         pushHistory()
         dragRef.current = { kind: 'player', id: target.player }
         setSelectedId(target.player)
+        setSelectedItemId(null)
+        return
+      }
+
+      if (target?.item) {
+        if (tool === 'erase') {
+          commit((current) => ({
+            ...current,
+            items: current.items.filter((i) => i.id !== target.item),
+          }))
+          setSelectedItemId(null)
+          return
+        }
+        if (tool !== 'select') return
+        event.stopPropagation()
+        event.currentTarget.setPointerCapture?.(event.pointerId)
+        pushHistory()
+        dragRef.current = { kind: 'item', id: target.item }
+        setSelectedItemId(target.item)
+        setSelectedId(null)
         return
       }
 
@@ -156,6 +177,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
 
       if (tool === 'select') {
         setSelectedId(null)
+        setSelectedItemId(null)
         return
       }
 
@@ -167,10 +189,21 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
 
       const itemKind = ITEM_TOOLS[tool]
       if (itemKind) {
-        commit((current) => ({
-          ...current,
-          items: [...current.items, { id: uid(), kind: itemKind, x: point.x, y: point.y }],
-        }))
+        // Se coloca mirando como el último del mismo tipo: al repartir varias
+        // escaleras o porterías en la misma dirección basta girar la primera.
+        const id = uid()
+        commit((current) => {
+          const previous = [...current.items].reverse().find((i) => i.kind === itemKind)
+          return {
+            ...current,
+            items: [
+              ...current.items,
+              { id, kind: itemKind, x: point.x, y: point.y, angle: previous?.angle ?? 0 },
+            ],
+          }
+        })
+        setSelectedItemId(id)
+        setSelectedId(null)
         return
       }
 
@@ -201,14 +234,19 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       const drag = dragRef.current
       if (drag) {
         const point = pointFrom(event)
-        setBoard((current) =>
-          drag.kind === 'ball'
-            ? { ...current, ball: point }
-            : {
-                ...current,
-                players: current.players.map((p) => (p.id === drag.id ? { ...p, ...point } : p)),
-              },
-        )
+        setBoard((current) => {
+          if (drag.kind === 'ball') return { ...current, ball: point }
+          if (drag.kind === 'item') {
+            return {
+              ...current,
+              items: current.items.map((i) => (i.id === drag.id ? { ...i, ...point } : i)),
+            }
+          }
+          return {
+            ...current,
+            players: current.players.map((p) => (p.id === drag.id ? { ...p, ...point } : p)),
+          }
+        })
         return
       }
 
@@ -303,6 +341,43 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     [commit],
   )
 
+  /**
+   * Orientación del material seleccionado. `rotateItem` gira a saltos (queda en
+   * el historial) y `setItemAngle` es el ajuste fino con la rueda, que se
+   * dispara en cada movimiento y por eso no se apila.
+   */
+  const normalizeAngle = (angle) => ((angle % 360) + 360) % 360
+
+  const rotateItem = useCallback(
+    (itemId, delta) =>
+      commit((current) => ({
+        ...current,
+        items: current.items.map((i) =>
+          i.id === itemId ? { ...i, angle: normalizeAngle((i.angle ?? 0) + delta) } : i,
+        ),
+      })),
+    [commit],
+  )
+
+  const setItemAngle = useCallback(
+    (itemId, angle) =>
+      setBoard((current) => ({
+        ...current,
+        items: current.items.map((i) =>
+          i.id === itemId ? { ...i, angle: normalizeAngle(angle) } : i,
+        ),
+      })),
+    [setBoard],
+  )
+
+  const removeItem = useCallback(
+    (itemId) => {
+      commit((current) => ({ ...current, items: current.items.filter((i) => i.id !== itemId) }))
+      setSelectedItemId(null)
+    },
+    [commit],
+  )
+
   /** Devuelve todas las fichas de un equipo al color de su equipo. */
   const clearBibs = useCallback(
     (team) =>
@@ -339,12 +414,13 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       players: buildTeam('home', homeFormation, formationSize),
     }))
     setSelectedId(null)
+    setSelectedItemId(null)
   }, [commit, homeFormation, formationSize])
 
-  const clearAnnotations = useCallback(
-    () => commit((current) => ({ ...current, shapes: [], items: [] })),
-    [commit],
-  )
+  const clearAnnotations = useCallback(() => {
+    commit((current) => ({ ...current, shapes: [], items: [] }))
+    setSelectedItemId(null)
+  }, [commit])
 
   /** Quita el balón del campo o lo devuelve al centro. */
   const toggleBall = useCallback(() => {
@@ -387,6 +463,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       const loaded = structuredClone(nextBoard)
       commit({ ...loaded, colors: teamColorsOf(loaded) })
       setSelectedId(null)
+      setSelectedItemId(null)
 
       const size = meta.formationSize ?? formationSize
       setFormationSizeState(size)
@@ -404,7 +481,9 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     svgRef,
     selectedId,
     setSelectedId,
+    selectedItemId,
     selectedPlayer: board.players.find((p) => p.id === selectedId) ?? null,
+    selectedItem: board.items.find((i) => i.id === selectedItemId) ?? null,
     canUndo: state.past.length > 0,
     formationSize,
     homeFormation,
@@ -419,6 +498,9 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     squadCounts,
     clearTeam,
     clearBibs,
+    rotateItem,
+    setItemAngle,
+    removeItem,
     setFormationSize,
     resetField,
     clearAnnotations,

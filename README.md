@@ -182,13 +182,14 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
   el `board`.
 - **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`, y `color`
   opcional para el peto de esa ficha; hasta 30 jugadores y 3 porteros por equipo), `items`
-  (`cone`, `ball`, `small_goal`, `big_goal`,
-  `ladder`), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
+  (`cone`, `ball`, `small_goal`, `big_goal`, `ladder`, cada uno con `angle` en grados para
+  orientarlo), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
   (nulo si la jugada empieza sin balón) y `colors` (color de ficha de jugador y de portero
   para `home` y `away`). Coordenadas en unidades de pizarra sobre un campo de 1050×680.
-  `role`, `color` y `colors` son opcionales: las jugadas guardadas antes de existir se leen
-  con los colores por defecto y tomando el dorsal 1 como portero. `Player.color` manda sobre
-  el color del equipo, así que dentro de un mismo equipo caben varios grupos de color.
+  `role`, `color`, `angle` y `colors` son opcionales: las jugadas guardadas antes de existir
+  se leen con los colores por defecto, el material sin girar y el dorsal 1 como portero.
+  `Player.color` manda sobre el color del equipo, así que dentro de un mismo equipo caben
+  varios grupos de color.
   Omitir `ball` lo coloca en el centro; enviarlo a `null` es lo que deja el campo sin balón.
 - **Propiedad**: `Play` y `TrainingSession` llevan `owner_id`. Cada usuario ve y toca sólo lo
   suyo; el administrador, todo. Lo que no es tuyo responde `404`, no `403`, para no revelar

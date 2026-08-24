@@ -155,6 +155,12 @@ const PATHS = {
       <polyline points="3 4 3 9 8 9" />
     </>
   ),
+  rotateRight: (
+    <>
+      <path d="M21 9a9 9 0 1 0-1.5 8.5" />
+      <polyline points="21 4 21 9 16 9" />
+    </>
+  ),
   clock: (
     <>
       <circle cx="12" cy="12" r="8.5" />

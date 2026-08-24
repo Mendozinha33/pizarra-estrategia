@@ -444,6 +444,15 @@ label.f {
   cursor: pointer;
 }
 
+/* La rueda de orientación del material: sin la caja de los campos de texto. */
+input[type='range'] {
+  padding: 0;
+  border: none;
+  background: transparent;
+  accent-color: var(--mint);
+  cursor: pointer;
+}
+
 .check input[type='checkbox'] {
   width: 15px;
   height: 15px;

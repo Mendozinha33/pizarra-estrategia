@@ -27,11 +27,11 @@ const GOALS = {
 }
 const LADDER = { w: 62, d: 20, rungs: 5 }
 
-/** Portería vista desde arriba: dos palos, larguero y red. */
-function Goal({ x, y, kind }) {
+/** Portería vista desde arriba: dos palos, larguero y red. Centrada en (0,0). */
+function Goal({ kind }) {
   const { w, d, posts } = GOALS[kind]
-  const left = x - w / 2
-  const top = y - d / 2
+  const left = -w / 2
+  const top = -d / 2
   const nets = [0.25, 0.5, 0.75]
   return (
     <>
@@ -59,11 +59,11 @@ function Goal({ x, y, kind }) {
   )
 }
 
-/** Escalera de coordinación. */
-function Ladder({ x, y }) {
+/** Escalera de coordinación, centrada en (0,0). */
+function Ladder() {
   const { w, d, rungs } = LADDER
-  const left = x - w / 2
-  const top = y - d / 2
+  const left = -w / 2
+  const top = -d / 2
   return (
     <>
       <rect x={left} y={top} width={w} height={d} fill="rgba(255,212,71,.16)" />
@@ -83,48 +83,51 @@ function Ladder({ x, y }) {
   )
 }
 
-/** Material colocado en el campo: conos, balones, porterías y escaleras. */
-function FieldItem({ item, eraseMode, onErase }) {
-  const interaction = {
-    onPointerDown: eraseMode
-      ? (event) => {
-          event.stopPropagation()
-          onErase(item.id, 'item')
-        }
-      : undefined,
-    style: { cursor: eraseMode ? 'pointer' : 'default' },
-  }
-
-  if (item.kind === 'cone') {
+/** Dibujo de cada material, siempre centrado en (0,0) para poder girarlo. */
+function ItemShape({ kind }) {
+  if (kind === 'cone') {
     return (
-      <path
-        d={`M${item.x},${item.y - 15} L${item.x + 13},${item.y + 11} L${item.x - 13},${item.y + 11} Z`}
-        fill="#FF8A3D"
-        stroke="rgba(0,0,0,.35)"
-        strokeWidth="2"
-        {...interaction}
-      />
+      <path d="M0,-15 L13,11 L-13,11 Z" fill="#FF8A3D" stroke="rgba(0,0,0,.35)" strokeWidth="2" />
     )
   }
+  if (kind === 'small_goal' || kind === 'big_goal') return <Goal kind={kind} />
+  if (kind === 'ladder') return <Ladder />
+  return <circle r="9" fill="#fff" stroke="rgba(0,0,0,.4)" strokeWidth="2" />
+}
 
-  if (item.kind === 'small_goal' || item.kind === 'big_goal') {
-    return (
-      <g {...interaction}>
-        <Goal x={item.x} y={item.y} kind={item.kind} />
-      </g>
-    )
-  }
+/** Radio del aro de selección de cada material. */
+const ITEM_HALO = { cone: 20, small_goal: 28, big_goal: 45, ladder: 36, ball: 15 }
 
-  if (item.kind === 'ladder') {
-    return (
-      <g {...interaction}>
-        <Ladder x={item.x} y={item.y} />
-      </g>
-    )
-  }
-
+/**
+ * Material colocado en el campo: conos, balones, porterías y escaleras. Se
+ * dibuja en el origen y se coloca y gira con la transformación del grupo, así
+ * cada elemento puede mirar hacia donde el entrenador quiera.
+ */
+function FieldItem({ item, selected, cursor, interactive, onPointerDown }) {
   return (
-    <circle cx={item.x} cy={item.y} r="9" fill="#fff" stroke="rgba(0,0,0,.4)" strokeWidth="2" {...interaction} />
+    <g
+      transform={`translate(${item.x},${item.y}) rotate(${item.angle ?? 0})`}
+      onPointerDown={
+        interactive
+          ? (event) => {
+              event.stopPropagation()
+              onPointerDown(event, { item: item.id })
+            }
+          : undefined
+      }
+      style={{ cursor }}
+    >
+      {selected && (
+        <circle
+          r={ITEM_HALO[item.kind] ?? 24}
+          fill="none"
+          stroke={COLORS.mint}
+          strokeWidth="3"
+          strokeDasharray="6 5"
+        />
+      )}
+      <ItemShape kind={item.kind} />
+    </g>
   )
 }
 
@@ -187,6 +190,7 @@ function BoardCanvasBase({
   animation = null,
   draft = null,
   selectedId = null,
+  selectedItemId = null,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -248,7 +252,14 @@ function BoardCanvasBase({
       <PitchMarkings surface={surface} />
 
       {board.items.map((item) => (
-        <FieldItem key={item.id} item={item} eraseMode={eraseMode} onErase={onErase} />
+        <FieldItem
+          key={item.id}
+          item={item}
+          selected={selectedItemId === item.id}
+          interactive={!readOnly && (tool === 'select' || eraseMode)}
+          cursor={readOnly ? 'default' : eraseMode ? 'pointer' : tool === 'select' ? 'grab' : 'default'}
+          onPointerDown={onPointerDown}
+        />
       ))}
 
       {shapes.map((shape) => (

@@ -1,5 +1,6 @@
 import { BoardCanvas } from '../../components/board/BoardCanvas.jsx'
 import { COLORS } from '../../lib/constants.js'
+import { ItemInspector } from './ItemInspector.jsx'
 import { PlayerInspector } from './PlayerInspector.jsx'
 import { SavePlayPanel } from './SavePlayPanel.jsx'
 import { TeamPanel } from './TeamPanel.jsx'
@@ -54,6 +55,7 @@ export function BoardView({ workspace, plays }) {
               animation={playback.animation}
               draft={editor.draft}
               selectedId={editor.selectedId}
+              selectedItemId={editor.selectedItemId}
               onPointerDown={editor.handlePointerDown}
               onPointerMove={editor.handlePointerMove}
               onPointerUp={editor.handlePointerUp}
@@ -78,10 +80,18 @@ export function BoardView({ workspace, plays }) {
             los pases en orden; puedes <strong>pausarla</strong> para explicar un detalle y
             continuar donde iba. Con <strong>Colocar balón</strong> lo pones donde quieras que
             empiece, y puedes quitarlo del campo si la jugada no lo necesita. Con las
-            herramientas de material colocas conos, balones, porterías y escaleras. Con{' '}
+            herramientas de material colocas conos, balones, porterías y escaleras: tócalos luego con{' '}
+            <strong>Mover</strong> para arrastrarlos o girarlos hacia donde quieras. Con{' '}
             <strong>Poner peto</strong> eliges un color y tocas las fichas que quieras de ese
             color: así repartes grupos dentro de un mismo equipo.
           </p>
+
+          <ItemInspector
+            item={editor.selectedItem}
+            onRotate={editor.rotateItem}
+            onAngleChange={editor.setItemAngle}
+            onRemove={editor.removeItem}
+          />
 
           <PlayerInspector
             player={editor.selectedPlayer}

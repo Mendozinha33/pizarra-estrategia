@@ -102,6 +102,9 @@ class BoardItem(StrictModel):
     kind: ItemKind
     x: Coordinate
     y: Coordinate
+    # Orientación en grados (0 = como se dibuja de serie). Ausente en las
+    # jugadas guardadas antes de poder girar el material: se leen sin girar.
+    angle: float = Field(default=0, ge=0, lt=360)
 
 
 class Shape(StrictModel):

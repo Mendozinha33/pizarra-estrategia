@@ -363,6 +363,45 @@ def test_material_desconocido_se_rechaza(
     assert client.post("/api/plays", json={**play_payload, "board": inventado}).status_code == 422
 
 
+def test_orientacion_del_material_va_y_vuelve(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    """Cada elemento guarda hacia dónde mira."""
+    material = [
+        {"id": "i1", "kind": "big_goal", "x": 300.0, "y": 120.0, "angle": 90.0},
+        {"id": "i2", "kind": "ladder", "x": 420.0, "y": 560.0, "angle": 45.5},
+    ]
+    creada = client.post(
+        "/api/plays", json={**play_payload, "board": {**board, "items": material}}
+    ).json()
+
+    guardada = client.get(f"/api/plays/{creada['id']}").json()["board"]
+    assert [item["angle"] for item in guardada["items"]] == [90.0, 45.5]
+
+
+def test_material_sin_orientacion_se_lee_sin_girar(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    """El material guardado antes de poder girarlo se lee como estaba."""
+    material = [{"id": "i1", "kind": "cone", "x": 200.0, "y": 200.0}]
+    creada = client.post(
+        "/api/plays", json={**play_payload, "board": {**board, "items": material}}
+    ).json()
+
+    assert creada["board"]["items"][0]["angle"] == 0
+
+
+def test_orientacion_fuera_de_rango_se_rechaza(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    for angulo in (360, -10):
+        malo = {
+            **board,
+            "items": [{"id": "i1", "kind": "cone", "x": 10.0, "y": 10.0, "angle": angulo}],
+        }
+        assert client.post("/api/plays", json={**play_payload, "board": malo}).status_code == 422
+
+
 def test_caben_treinta_jugadores_y_tres_porteros_por_equipo(
     client: TestClient, play_payload: dict, board: dict
 ) -> None:
