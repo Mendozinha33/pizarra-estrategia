@@ -22,10 +22,19 @@ export function isGoalkeeper(player) {
   return player.role ? player.role === 'gk' : player.num === '1'
 }
 
-/** Color de la ficha de un jugador según su equipo y si es portero. */
-export function tokenColor(player, colors) {
+/** Color que le toca a un jugador por su equipo y por si es portero. */
+export function teamTokenColor(player, colors) {
   const team = player.team === 'home' ? colors.home : colors.away
   return isGoalkeeper(player) ? team.gk : team.player
+}
+
+/**
+ * Color de la ficha: manda el color propio del jugador (el "peto") si lo tiene,
+ * y si no, el de su equipo. Así se pueden repartir grupos de colores dentro de
+ * un mismo equipo sin tocar el color general.
+ */
+export function tokenColor(player, colors) {
+  return player.color || teamTokenColor(player, colors)
 }
 
 const expand = (hex) =>

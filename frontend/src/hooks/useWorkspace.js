@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useToast } from '../components/ui/Toast.jsx'
 import { teamColorsOf } from '../lib/colors.js'
-import { PEN_COLORS, TOOLS } from '../lib/constants.js'
+import { BIB_COLORS, PEN_COLORS, TOOLS } from '../lib/constants.js'
 import { exportSvgToPng } from '../lib/exportPng.js'
 import { useBoardEditor } from './useBoardEditor.js'
 import { usePlayback } from './usePlayback.js'
@@ -19,6 +19,8 @@ export function useWorkspace(plays) {
 
   const [tool, setTool] = useState('select')
   const [color, setColor] = useState(PEN_COLORS[0].hex)
+  // Color de peto activo; `null` significa "quitar el peto" al tocar una ficha.
+  const [bibColor, setBibColor] = useState(BIB_COLORS[0].hex)
   const [labelText, setLabelText] = useState('Presión alta')
   const [surface, setSurface] = useState('full')
   const [homeName, setHomeName] = useState('Mi equipo')
@@ -27,7 +29,14 @@ export function useWorkspace(plays) {
   const [editingPlay, setEditingPlay] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  const editor = useBoardEditor({ tool, color, surface, labelText, onWarn: toast.notify })
+  const editor = useBoardEditor({
+    tool,
+    color,
+    bibColor,
+    surface,
+    labelText,
+    onWarn: toast.notify,
+  })
   const playback = usePlayback(editor.board, { onWarn: toast.notify })
 
   // Atajos de teclado para las herramientas; no interfieren con los formularios.
@@ -182,6 +191,8 @@ export function useWorkspace(plays) {
     setTool,
     color,
     setColor,
+    bibColor,
+    setBibColor,
     labelText,
     setLabelText,
     surface,

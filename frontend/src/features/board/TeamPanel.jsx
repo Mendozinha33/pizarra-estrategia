@@ -24,6 +24,23 @@ function TeamColorPicker({ team, label, colors, onChange }) {
   )
 }
 
+/** Vuelve a poner todo el equipo del color del equipo (quita los petos). */
+function ClearBibs({ team, hasBibs, onClear }) {
+  return (
+    <button
+      type="button"
+      className="btn ghost"
+      style={{ marginTop: 6, width: '100%' }}
+      disabled={!hasBibs}
+      title="Devolver todas las fichas del equipo al color del equipo"
+      onClick={() => onClear(team)}
+    >
+      <Icon name="rotate" size={13} />
+      Quitar petos
+    </button>
+  )
+}
+
 /** Botones para sumar fichas sueltas a un equipo, con el recuento actual. */
 function AddPlayers({ team, counts, onAdd }) {
   return (
@@ -61,6 +78,8 @@ export function TeamPanel({
 }) {
   const options = formationNames(editor.formationSize)
   const colors = editor.colors
+  const hasBibs = (team) =>
+    editor.board.players.some((player) => player.team === team && player.color)
 
   return (
     <div>
@@ -110,6 +129,7 @@ export function TeamPanel({
           colors={colors.home}
           onChange={editor.setTeamColor}
         />
+        <ClearBibs team="home" hasBibs={hasBibs('home')} onClear={editor.clearBibs} />
         <AddPlayers team="home" counts={editor.squadCounts.home} onAdd={editor.addPlayer} />
 
         <label className="f" htmlFor="away-name">
@@ -135,6 +155,7 @@ export function TeamPanel({
           colors={colors.away}
           onChange={editor.setTeamColor}
         />
+        <ClearBibs team="away" hasBibs={hasBibs('away')} onClear={editor.clearBibs} />
         <AddPlayers team="away" counts={editor.squadCounts.away} onAdd={editor.addPlayer} />
 
         <div className="row" style={{ marginTop: 8 }}>

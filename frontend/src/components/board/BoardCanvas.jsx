@@ -279,7 +279,7 @@ function BoardCanvasBase({
           position={positionOf(player)}
           colors={colors}
           selected={selectedId === player.id}
-          cursor={readOnly ? 'default' : eraseMode ? 'pointer' : 'grab'}
+          cursor={readOnly ? 'default' : eraseMode || tool === 'bib' ? 'pointer' : 'grab'}
           onPointerDown={readOnly ? undefined : (event) => onPointerDown(event, { player: player.id })}
         />
       ))}

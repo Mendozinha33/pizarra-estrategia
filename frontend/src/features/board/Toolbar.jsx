@@ -1,4 +1,4 @@
-import { PEN_COLORS, TOOLS } from '../../lib/constants.js'
+import { BIB_COLORS, PEN_COLORS, TOOLS } from '../../lib/constants.js'
 import { Icon } from '../../components/ui/Icon.jsx'
 
 /** Bandeja de herramientas, colores y acciones del lienzo. */
@@ -7,6 +7,8 @@ export function Toolbar({
   onToolChange,
   color,
   onColorChange,
+  bibColor,
+  onBibColorChange,
   labelText,
   onLabelTextChange,
   onPlay,
@@ -37,20 +39,47 @@ export function Toolbar({
         ))}
       </div>
 
-      <div className="row" style={{ alignItems: 'center', gap: 6 }}>
-        {PEN_COLORS.map((pen) => (
+      {tool === 'bib' ? (
+        <div className="row" style={{ alignItems: 'center', gap: 6 }}>
+          {BIB_COLORS.map((bib) => (
+            <button
+              key={bib.id}
+              type="button"
+              className={`swatch ${bibColor === bib.hex ? 'on' : ''}`}
+              title={`Peto ${bib.id}`}
+              aria-label={`Peto ${bib.id}`}
+              aria-pressed={bibColor === bib.hex}
+              style={{ background: bib.hex }}
+              onClick={() => onBibColorChange(bib.hex)}
+            />
+          ))}
           <button
-            key={pen.id}
             type="button"
-            className={`swatch ${color === pen.hex ? 'on' : ''}`}
-            title={`Trazo ${pen.id}`}
-            aria-label={`Trazo ${pen.id}`}
-            aria-pressed={color === pen.hex}
-            style={{ background: pen.hex }}
-            onClick={() => onColorChange(pen.hex)}
-          />
-        ))}
-      </div>
+            className={`btn ${bibColor === null ? 'primary' : 'ghost'}`}
+            title="Quitar el peto: la ficha vuelve al color de su equipo"
+            aria-pressed={bibColor === null}
+            onClick={() => onBibColorChange(null)}
+          >
+            Sin peto
+          </button>
+          <span className="hint">Elige un color y toca las fichas.</span>
+        </div>
+      ) : (
+        <div className="row" style={{ alignItems: 'center', gap: 6 }}>
+          {PEN_COLORS.map((pen) => (
+            <button
+              key={pen.id}
+              type="button"
+              className={`swatch ${color === pen.hex ? 'on' : ''}`}
+              title={`Trazo ${pen.id}`}
+              aria-label={`Trazo ${pen.id}`}
+              aria-pressed={color === pen.hex}
+              style={{ background: pen.hex }}
+              onClick={() => onColorChange(pen.hex)}
+            />
+          ))}
+        </div>
+      )}
 
       {tool === 'text' && (
         <input

@@ -147,6 +147,34 @@ def test_rejects_invalid_color_or_role(
     assert client.post("/api/plays", json={**play_payload, "board": bad_role}).status_code == 422
 
 
+def test_player_color_round_trip(client: TestClient, play_payload: dict, board: dict) -> None:
+    """Cada ficha puede llevar su propio color (petos) dentro del mismo equipo."""
+    board = {
+        **board,
+        "players": [
+            {**board["players"][0], "color": "#2FBF71"},
+            {**board["players"][1], "color": "#E23D4C"},
+        ],
+    }
+    created = client.post("/api/plays", json={**play_payload, "board": board}).json()
+
+    stored = client.get(f"/api/plays/{created['id']}").json()["board"]
+    assert stored["players"][0]["color"] == "#2FBF71"
+    assert stored["players"][1]["color"] == "#E23D4C"
+
+
+def test_player_color_is_optional(client: TestClient, play_payload: dict) -> None:
+    """Sin color propio la ficha se lee en nulo: lleva el color de su equipo."""
+    created = client.post("/api/plays", json=play_payload).json()
+
+    assert created["board"]["players"][0]["color"] is None
+
+
+def test_rejects_invalid_player_color(client: TestClient, play_payload: dict, board: dict) -> None:
+    bad = {**board, "players": [{**board["players"][0], "color": "verde"}]}
+    assert client.post("/api/plays", json={**play_payload, "board": bad}).status_code == 422
+
+
 # --------------------------------------------------------------------------- #
 # Cada uno ve lo suyo; el administrador, todo
 # --------------------------------------------------------------------------- #

@@ -180,14 +180,16 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
 - **Play**: nombre, categoría (`Ataque`, `Defensa`, `ABP`, `Entrenamiento`), superficie
   (`full`, `half`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo, consignas y
   el `board`.
-- **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`; hasta 30
-  jugadores y 3 porteros por equipo), `items` (`cone`, `ball`, `small_goal`, `big_goal`,
+- **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`, y `color`
+  opcional para el peto de esa ficha; hasta 30 jugadores y 3 porteros por equipo), `items`
+  (`cone`, `ball`, `small_goal`, `big_goal`,
   `ladder`), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
   (nulo si la jugada empieza sin balón) y `colors` (color de ficha de jugador y de portero
   para `home` y `away`). Coordenadas en unidades de pizarra sobre un campo de 1050×680.
-  `role` y `colors` son opcionales: las jugadas guardadas antes de existir se leen con los
-  colores por defecto y tomando el dorsal 1 como portero. Omitir `ball` lo coloca en el
-  centro; enviarlo a `null` es lo que deja el campo sin balón.
+  `role`, `color` y `colors` son opcionales: las jugadas guardadas antes de existir se leen
+  con los colores por defecto y tomando el dorsal 1 como portero. `Player.color` manda sobre
+  el color del equipo, así que dentro de un mismo equipo caben varios grupos de color.
+  Omitir `ball` lo coloca en el centro; enviarlo a `null` es lo que deja el campo sin balón.
 - **Propiedad**: `Play` y `TrainingSession` llevan `owner_id`. Cada usuario ve y toca sólo lo
   suyo; el administrador, todo. Lo que no es tuyo responde `404`, no `403`, para no revelar
   que existe. `/api/sessions/current` devuelve la sesión de trabajo de cada usuario.
@@ -240,6 +242,6 @@ sin cubrir justo lo que puede fallar en producción (`JSONB`, los `ON DELETE`, l
   título y acto seguido los minutos no descarte lo primero.
 - **Historial en un reducer.** Tablero e historial de deshacer viven en la misma
   transición de estado, de modo que no pueden desincronizarse.
-- **Atajos de teclado.** `V` mover, `D` desplazamiento, `P` pase, `C` conducción, `L`
+- **Atajos de teclado.** `V` mover, `X` peto, `D` desplazamiento, `P` pase, `C` conducción, `L`
   trazo libre, `Z` zona, `T` etiqueta, `N` colocar balón, `O` cono, `B` balón extra, `J`
   portería pequeña, `G` portería grande, `A` escalera, `E` borrar, `Ctrl/Cmd+Z` deshacer.

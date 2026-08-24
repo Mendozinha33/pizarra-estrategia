@@ -1,7 +1,14 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react'
 
 import { isGoalkeeper, teamColorsOf } from '../lib/colors.js'
-import { ITEM_TOOLS, MAX_PLAYERS_PER_TEAM, PITCH, SURFACES, UNDO_DEPTH } from '../lib/constants.js'
+import {
+  DRAW_TOOLS,
+  ITEM_TOOLS,
+  MAX_PLAYERS_PER_TEAM,
+  PITCH,
+  SURFACES,
+  UNDO_DEPTH,
+} from '../lib/constants.js'
 import { buildTeam, DEFAULT_FORMATION, emptyBoard, formationNames } from '../lib/formations.js'
 import { distance, toBoardPoint, uid } from '../lib/geometry.js'
 
@@ -78,7 +85,7 @@ function initialState() {
  * Toda mutación pasa por `commit`, que apila el estado anterior para deshacer.
  * Los arrastres no se apilan en cada frame: se apila una vez al empezar.
  */
-export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
+export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWarn }) {
   const [formationSize, setFormationSizeState] = useState('f11')
   const [homeFormation, setHomeFormation] = useState(DEFAULT_FORMATION.f11.home)
   const [awayFormation, setAwayFormation] = useState(DEFAULT_FORMATION.f11.away)
@@ -111,6 +118,17 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
           commit((current) => ({
             ...current,
             players: current.players.filter((p) => p.id !== target.player),
+          }))
+          return
+        }
+        // Con la herramienta de petos, tocar una ficha le pone (o le quita) el
+        // color elegido: repartir los grupos es un toque por jugador.
+        if (tool === 'bib') {
+          commit((current) => ({
+            ...current,
+            players: current.players.map((p) =>
+              p.id === target.player ? { ...p, color: bibColor ?? null } : p,
+            ),
           }))
           return
         }
@@ -171,11 +189,11 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
         return
       }
 
-      if (tool !== 'erase') {
+      if (DRAW_TOOLS.has(tool)) {
         setDraft({ id: 'draft', type: tool, points: [point, point], color, text: '' })
       }
     },
-    [tool, color, labelText, commit, pushHistory, pointFrom, onWarn],
+    [tool, color, bibColor, labelText, commit, pushHistory, pointFrom, onWarn],
   )
 
   const handlePointerMove = useCallback(
@@ -285,6 +303,16 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     [commit],
   )
 
+  /** Devuelve todas las fichas de un equipo al color de su equipo. */
+  const clearBibs = useCallback(
+    (team) =>
+      commit((current) => ({
+        ...current,
+        players: current.players.map((p) => (p.team === team ? { ...p, color: null } : p)),
+      })),
+    [commit],
+  )
+
   const setFormationSize = useCallback(
     (size) => {
       const home = DEFAULT_FORMATION[size].home
@@ -390,6 +418,7 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     addPlayer,
     squadCounts,
     clearTeam,
+    clearBibs,
     setFormationSize,
     resetField,
     clearAnnotations,

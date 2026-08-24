@@ -18,6 +18,8 @@ export function BoardView({ workspace, plays }) {
         onToolChange={workspace.setTool}
         color={workspace.color}
         onColorChange={workspace.setColor}
+        bibColor={workspace.bibColor}
+        onBibColorChange={workspace.setBibColor}
         labelText={workspace.labelText}
         onLabelTextChange={workspace.setLabelText}
         onPlay={playback.play}
@@ -76,10 +78,16 @@ export function BoardView({ workspace, plays }) {
             los pases en orden; puedes <strong>pausarla</strong> para explicar un detalle y
             continuar donde iba. Con <strong>Colocar balón</strong> lo pones donde quieras que
             empiece, y puedes quitarlo del campo si la jugada no lo necesita. Con las
-            herramientas de material colocas conos, balones, porterías y escaleras.
+            herramientas de material colocas conos, balones, porterías y escaleras. Con{' '}
+            <strong>Poner peto</strong> eliges un color y tocas las fichas que quieras de ese
+            color: así repartes grupos dentro de un mismo equipo.
           </p>
 
-          <PlayerInspector player={editor.selectedPlayer} onChange={editor.updatePlayer} />
+          <PlayerInspector
+            player={editor.selectedPlayer}
+            colors={editor.colors}
+            onChange={editor.updatePlayer}
+          />
         </div>
 
         <SavePlayPanel

@@ -92,6 +92,9 @@ class Player(StrictModel):
     # Sin valor en las jugadas antiguas: entonces el frontend toma el dorsal 1
     # como portero.
     role: PlayerRole | None = None
+    # Color propio de la ficha ("peto"), para repartir grupos de colores dentro
+    # de un mismo equipo. Nulo = lleva el color de su equipo.
+    color: str | None = Field(default=None, pattern=HEX_COLOR)
 
 
 class BoardItem(StrictModel):

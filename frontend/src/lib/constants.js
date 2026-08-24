@@ -52,6 +52,21 @@ export const PLAY_KINDS = [
 /** Etiqueta de las jugadas que no están en ninguna carpeta. */
 export const NO_FOLDER_LABEL = 'Sin carpeta'
 
+/**
+ * Petos: colores sueltos que se pueden dar a una ficha concreta, para repartir
+ * grupos dentro del mismo equipo (5 de rojo, 5 de azul, 10 de verde…).
+ */
+export const BIB_COLORS = [
+  { id: 'verde', hex: '#2FBF71' },
+  { id: 'rojo', hex: '#E23D4C' },
+  { id: 'azul', hex: '#2B6CF6' },
+  { id: 'amarillo', hex: '#FFD447' },
+  { id: 'naranja', hex: '#FF8A3D' },
+  { id: 'morado', hex: '#9B5DE5' },
+  { id: 'blanco', hex: '#F4F7F3' },
+  { id: 'negro', hex: '#141C24' },
+]
+
 export const PEN_COLORS = [
   { id: 'amarillo', hex: '#FFD447' },
   { id: 'blanco', hex: '#EAF2EC' },
@@ -61,6 +76,7 @@ export const PEN_COLORS = [
 /** Herramientas del lienzo. `key` es el atajo de teclado. */
 export const TOOLS = [
   { id: 'select', icon: 'pointer', label: 'Mover', key: 'v' },
+  { id: 'bib', icon: 'shirt', label: 'Poner peto', key: 'x' },
   { id: 'run', icon: 'arrowRight', label: 'Desplazamiento', key: 'd' },
   { id: 'pass', icon: 'chevronRight', label: 'Pase', key: 'p' },
   { id: 'dribble', icon: 'waves', label: 'Conducción', key: 'c' },
@@ -90,6 +106,9 @@ export const ITEM_TOOLS = {
 
 /** Tope de fichas por equipo: jugadores de campo y porteros. */
 export const MAX_PLAYERS_PER_TEAM = { field: 30, gk: 3 }
+
+/** Herramientas que dibujan un trazo arrastrando sobre el campo. */
+export const DRAW_TOOLS = new Set(['run', 'pass', 'dribble', 'free', 'zone'])
 
 /** Trazos que la reproducción sabe animar. */
 export const MOVEMENT_SHAPES = new Set(['run', 'dribble', 'free'])
