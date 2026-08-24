@@ -20,6 +20,114 @@ function Ball({ x, y, cursor, interactive, onPointerDown }) {
   )
 }
 
+/** Medidas de las porterías y la escalera, en unidades de pizarra (10 ≈ 1 m). */
+const GOALS = {
+  big_goal: { w: 76, d: 24, posts: 3.5 },
+  small_goal: { w: 42, d: 16, posts: 3 },
+}
+const LADDER = { w: 62, d: 20, rungs: 5 }
+
+/** Portería vista desde arriba: dos palos, larguero y red. */
+function Goal({ x, y, kind }) {
+  const { w, d, posts } = GOALS[kind]
+  const left = x - w / 2
+  const top = y - d / 2
+  const nets = [0.25, 0.5, 0.75]
+  return (
+    <>
+      <rect x={left} y={top} width={w} height={d} fill="rgba(255,255,255,.14)" />
+      {nets.map((f) => (
+        <line
+          key={f}
+          x1={left + w * f}
+          y1={top}
+          x2={left + w * f}
+          y2={top + d}
+          stroke="rgba(234,242,236,.5)"
+          strokeWidth="1.5"
+        />
+      ))}
+      <path
+        d={`M${left},${top + d} L${left},${top} L${left + w},${top} L${left + w},${top + d}`}
+        fill="none"
+        stroke="#EAF2EC"
+        strokeWidth={posts}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </>
+  )
+}
+
+/** Escalera de coordinación. */
+function Ladder({ x, y }) {
+  const { w, d, rungs } = LADDER
+  const left = x - w / 2
+  const top = y - d / 2
+  return (
+    <>
+      <rect x={left} y={top} width={w} height={d} fill="rgba(255,212,71,.16)" />
+      {Array.from({ length: rungs + 1 }, (_, i) => (
+        <line
+          key={i}
+          x1={left + (w / rungs) * i}
+          y1={top}
+          x2={left + (w / rungs) * i}
+          y2={top + d}
+          stroke="#FFD447"
+          strokeWidth="2.5"
+        />
+      ))}
+      <rect x={left} y={top} width={w} height={d} fill="none" stroke="#FFD447" strokeWidth="3" />
+    </>
+  )
+}
+
+/** Material colocado en el campo: conos, balones, porterías y escaleras. */
+function FieldItem({ item, eraseMode, onErase }) {
+  const interaction = {
+    onPointerDown: eraseMode
+      ? (event) => {
+          event.stopPropagation()
+          onErase(item.id, 'item')
+        }
+      : undefined,
+    style: { cursor: eraseMode ? 'pointer' : 'default' },
+  }
+
+  if (item.kind === 'cone') {
+    return (
+      <path
+        d={`M${item.x},${item.y - 15} L${item.x + 13},${item.y + 11} L${item.x - 13},${item.y + 11} Z`}
+        fill="#FF8A3D"
+        stroke="rgba(0,0,0,.35)"
+        strokeWidth="2"
+        {...interaction}
+      />
+    )
+  }
+
+  if (item.kind === 'small_goal' || item.kind === 'big_goal') {
+    return (
+      <g {...interaction}>
+        <Goal x={item.x} y={item.y} kind={item.kind} />
+      </g>
+    )
+  }
+
+  if (item.kind === 'ladder') {
+    return (
+      <g {...interaction}>
+        <Ladder x={item.x} y={item.y} />
+      </g>
+    )
+  }
+
+  return (
+    <circle cx={item.x} cy={item.y} r="9" fill="#fff" stroke="rgba(0,0,0,.4)" strokeWidth="2" {...interaction} />
+  )
+}
+
 function PlayerToken({ player, position, colors, selected, cursor, onPointerDown }) {
   const fill = tokenColor(player, colors)
   return (
@@ -96,11 +204,6 @@ function BoardCanvasBase({
     ? board.shapes.filter((shape) => !PLAYBACK_HIDDEN_SHAPES.has(shape.type))
     : board.shapes
 
-  const eraseHandler = (id, kind) => (event) => {
-    event.stopPropagation()
-    onErase(id, kind)
-  }
-
   return (
     <svg
       ref={svgRef}
@@ -144,31 +247,9 @@ function BoardCanvasBase({
 
       <PitchMarkings surface={surface} />
 
-      {board.items.map((item) =>
-        item.kind === 'cone' ? (
-          <path
-            key={item.id}
-            d={`M${item.x},${item.y - 15} L${item.x + 13},${item.y + 11} L${item.x - 13},${item.y + 11} Z`}
-            fill="#FF8A3D"
-            stroke="rgba(0,0,0,.35)"
-            strokeWidth="2"
-            onPointerDown={eraseMode ? eraseHandler(item.id, 'item') : undefined}
-            style={{ cursor: eraseMode ? 'pointer' : 'default' }}
-          />
-        ) : (
-          <circle
-            key={item.id}
-            cx={item.x}
-            cy={item.y}
-            r="9"
-            fill="#fff"
-            stroke="rgba(0,0,0,.4)"
-            strokeWidth="2"
-            onPointerDown={eraseMode ? eraseHandler(item.id, 'item') : undefined}
-            style={{ cursor: eraseMode ? 'pointer' : 'default' }}
-          />
-        ),
-      )}
+      {board.items.map((item) => (
+        <FieldItem key={item.id} item={item} eraseMode={eraseMode} onErase={onErase} />
+      ))}
 
       {shapes.map((shape) => (
         <BoardShape key={shape.id} shape={shape} eraseMode={eraseMode} onErase={onErase} />

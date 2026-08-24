@@ -1,4 +1,4 @@
-import { SURFACE_OPTIONS } from '../../lib/constants.js'
+import { MAX_PLAYERS_PER_TEAM, SURFACE_OPTIONS } from '../../lib/constants.js'
 import { formationNames } from '../../lib/formations.js'
 import { Icon } from '../../components/ui/Icon.jsx'
 
@@ -19,6 +19,31 @@ function TeamColorPicker({ team, label, colors, onChange }) {
           />
           {kindLabel}
         </label>
+      ))}
+    </div>
+  )
+}
+
+/** Botones para sumar fichas sueltas a un equipo, con el recuento actual. */
+function AddPlayers({ team, counts, onAdd }) {
+  return (
+    <div className="row" style={{ marginTop: 6 }}>
+      {[
+        ['field', 'Jugador'],
+        ['gk', 'Portero'],
+      ].map(([role, label]) => (
+        <button
+          key={role}
+          type="button"
+          className="btn ghost"
+          style={{ flex: 1 }}
+          title={`Añadir ${label.toLowerCase()}`}
+          disabled={counts[role] >= MAX_PLAYERS_PER_TEAM[role]}
+          onClick={() => onAdd(team, role)}
+        >
+          <Icon name="plus" size={13} />
+          {label} {counts[role]}/{MAX_PLAYERS_PER_TEAM[role]}
+        </button>
       ))}
     </div>
   )
@@ -85,6 +110,7 @@ export function TeamPanel({
           colors={colors.home}
           onChange={editor.setTeamColor}
         />
+        <AddPlayers team="home" counts={editor.squadCounts.home} onAdd={editor.addPlayer} />
 
         <label className="f" htmlFor="away-name">
           <span className="teamdot" style={{ background: colors.away.player }} />
@@ -109,6 +135,7 @@ export function TeamPanel({
           colors={colors.away}
           onChange={editor.setTeamColor}
         />
+        <AddPlayers team="away" counts={editor.squadCounts.away} onAdd={editor.addPlayer} />
 
         <div className="row" style={{ marginTop: 8 }}>
           <button

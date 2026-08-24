@@ -300,3 +300,60 @@ def test_sin_indicar_balon_se_pone_en_el_centro(
     creada = client.post("/api/plays", json={**play_payload, "board": sin_campo}).json()
 
     assert creada["board"]["ball"] == {"x": 525.0, "y": 340.0}
+
+
+# --------------------------------------------------------------------------- #
+# Material del campo y plantillas grandes
+# --------------------------------------------------------------------------- #
+
+
+def test_se_pueden_guardar_porterias_y_escaleras(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    material = [
+        {"id": "i1", "kind": "cone", "x": 200.0, "y": 200.0},
+        {"id": "i2", "kind": "small_goal", "x": 300.0, "y": 120.0},
+        {"id": "i3", "kind": "big_goal", "x": 1000.0, "y": 340.0},
+        {"id": "i4", "kind": "ladder", "x": 420.0, "y": 560.0},
+    ]
+    creada = client.post(
+        "/api/plays", json={**play_payload, "board": {**board, "items": material}}
+    ).json()
+
+    assert [item["kind"] for item in creada["board"]["items"]] == [
+        "cone",
+        "small_goal",
+        "big_goal",
+        "ladder",
+    ]
+
+
+def test_material_desconocido_se_rechaza(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    inventado = {**board, "items": [{"id": "i1", "kind": "trampolin", "x": 10.0, "y": 10.0}]}
+    assert client.post("/api/plays", json={**play_payload, "board": inventado}).status_code == 422
+
+
+def test_caben_treinta_jugadores_y_tres_porteros_por_equipo(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    plantilla = [
+        {
+            "id": f"{team}-{index}",
+            "team": team,
+            "num": str(index + 1),
+            "name": "",
+            "role": "gk" if index < 3 else "field",
+            "x": 100.0 + index * 10,
+            "y": 100.0,
+        }
+        for team in ("home", "away")
+        for index in range(33)
+    ]
+    creada = client.post(
+        "/api/plays", json={**play_payload, "board": {**board, "players": plantilla}}
+    )
+
+    assert creada.status_code == 201, creada.text
+    assert len(creada.json()["board"]["players"]) == 66

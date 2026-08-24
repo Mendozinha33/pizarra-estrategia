@@ -1,7 +1,7 @@
-import { useCallback, useReducer, useRef, useState } from 'react'
+import { useCallback, useMemo, useReducer, useRef, useState } from 'react'
 
-import { teamColorsOf } from '../lib/colors.js'
-import { PITCH, SURFACES, UNDO_DEPTH } from '../lib/constants.js'
+import { isGoalkeeper, teamColorsOf } from '../lib/colors.js'
+import { ITEM_TOOLS, MAX_PLAYERS_PER_TEAM, PITCH, SURFACES, UNDO_DEPTH } from '../lib/constants.js'
 import { buildTeam, DEFAULT_FORMATION, emptyBoard, formationNames } from '../lib/formations.js'
 import { distance, toBoardPoint, uid } from '../lib/geometry.js'
 
@@ -32,6 +32,36 @@ function boardReducer(state, action) {
         : { board: state.past[state.past.length - 1], past: state.past.slice(0, -1) }
     default:
       return state
+  }
+}
+
+/** Dorsales que se prefieren para los porteros. */
+const GK_NUMBERS = ['1', '13', '25']
+
+/** Primer dorsal libre del equipo. */
+function nextNumber(players, team, role) {
+  const used = new Set(players.filter((p) => p.team === team).map((p) => p.num))
+  if (role === 'gk') {
+    const preferred = GK_NUMBERS.find((num) => !used.has(num))
+    if (preferred) return preferred
+  }
+  for (let num = role === 'gk' ? 1 : 2; num <= 99; num += 1) {
+    if (!used.has(String(num))) return String(num)
+  }
+  return ''
+}
+
+/**
+ * Sitio para una ficha añadida a mano: en fila por la banda, dentro de lo que
+ * se está viendo, para que el entrenador sólo tenga que arrastrarla al sitio.
+ */
+function benchSpot(view, index, team) {
+  const step = 46
+  const perRow = Math.max(1, Math.floor((view.w - 80) / step))
+  const row = Math.floor(index / perRow)
+  return {
+    x: view.x + 40 + (index % perRow) * step,
+    y: team === 'away' ? view.y + 42 + row * 52 : view.y + view.h - 42 - row * 52,
   }
 }
 
@@ -117,13 +147,11 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
         return
       }
 
-      if (tool === 'cone' || tool === 'extraBall') {
+      const itemKind = ITEM_TOOLS[tool]
+      if (itemKind) {
         commit((current) => ({
           ...current,
-          items: [
-            ...current.items,
-            { id: uid(), kind: tool === 'cone' ? 'cone' : 'ball', x: point.x, y: point.y },
-          ],
+          items: [...current.items, { id: uid(), kind: itemKind, x: point.x, y: point.y }],
         }))
         return
       }
@@ -213,6 +241,43 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
       else setAwayFormation(formation)
     },
     [commit, formationSize],
+  )
+
+  /** Recuento de fichas por equipo, para los topes y los contadores del panel. */
+  const squadCounts = useMemo(() => {
+    const counts = { home: { field: 0, gk: 0 }, away: { field: 0, gk: 0 } }
+    board.players.forEach((player) => {
+      const team = player.team === 'away' ? 'away' : 'home'
+      counts[team][isGoalkeeper(player) ? 'gk' : 'field'] += 1
+    })
+    return counts
+  }, [board.players])
+
+  /** Añade una ficha suelta al equipo, además de las de la formación. */
+  const addPlayer = useCallback(
+    (team, role) => {
+      if (squadCounts[team][role] >= MAX_PLAYERS_PER_TEAM[role]) {
+        onWarn?.(
+          role === 'gk'
+            ? `Ya hay ${MAX_PLAYERS_PER_TEAM.gk} porteros en ese equipo`
+            : `Ya hay ${MAX_PLAYERS_PER_TEAM.field} jugadores en ese equipo`,
+        )
+        return
+      }
+      const view = SURFACES[surface] ?? SURFACES.full
+      const squad = board.players.filter((p) => p.team === team)
+      const player = {
+        id: uid(),
+        team,
+        num: nextNumber(board.players, team, role),
+        name: '',
+        role,
+        ...benchSpot(view, squad.length, team),
+      }
+      commit((current) => ({ ...current, players: [...current.players, player] }))
+      setSelectedId(player.id)
+    },
+    [board.players, squadCounts, surface, commit, onWarn],
   )
 
   const clearTeam = useCallback(
@@ -322,6 +387,8 @@ export function useBoardEditor({ tool, color, surface, labelText, onWarn }) {
     erase,
     undo,
     applyFormation,
+    addPlayer,
+    squadCounts,
     clearTeam,
     setFormationSize,
     resetField,

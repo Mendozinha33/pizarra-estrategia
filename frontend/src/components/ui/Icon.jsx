@@ -39,6 +39,38 @@ const PATHS = {
       <path d="M12 7.5l3.4 2.5-1.3 4h-4.2l-1.3-4z" />
     </>
   ),
+  goalSmall: (
+    <>
+      <path d="M7 17V9h10v8" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+      <line x1="12" y1="9" x2="12" y2="17" />
+    </>
+  ),
+  goalBig: (
+    <>
+      <path d="M4 18V7h16v11" />
+      <line x1="2" y1="18" x2="22" y2="18" />
+      <line x1="9" y1="7" x2="9" y2="18" />
+      <line x1="15" y1="7" x2="15" y2="18" />
+      <line x1="4" y1="12.5" x2="20" y2="12.5" />
+    </>
+  ),
+  ladder: (
+    <>
+      <line x1="4" y1="4" x2="4" y2="20" />
+      <line x1="20" y1="4" x2="20" y2="20" />
+      <line x1="4" y1="8" x2="20" y2="8" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="16" x2="20" y2="16" />
+    </>
+  ),
+  pause: (
+    <>
+      <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none" />
+      <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  stop: <rect x="5" y="5" width="14" height="14" rx="1.5" fill="currentColor" stroke="none" />,
   eraser: (
     <>
       <path d="M20 20H8l-5-5a2 2 0 0 1 0-3l9-9a2 2 0 0 1 3 0l7 7a2 2 0 0 1 0 3l-6 6" />

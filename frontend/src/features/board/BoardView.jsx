@@ -21,7 +21,10 @@ export function BoardView({ workspace, plays }) {
         labelText={workspace.labelText}
         onLabelTextChange={workspace.setLabelText}
         onPlay={playback.play}
+        onPause={playback.pause}
+        onStop={playback.stop}
         isPlaying={playback.isPlaying}
+        isPaused={playback.isPaused}
         onUndo={editor.undo}
         canUndo={editor.canUndo}
         onClear={editor.clearAnnotations}
@@ -70,8 +73,10 @@ export function BoardView({ workspace, plays }) {
             Arrastra los dorsales con la herramienta <strong>Mover</strong>. Dibuja los
             desplazamientos partiendo desde el jugador y pulsa{' '}
             <strong>Reproducir jugada</strong>: los dorsales recorren sus flechas y el balón sigue
-            los pases en orden. Con <strong>Colocar balón</strong> lo pones donde quieras que
-            empiece, y puedes quitarlo del campo si la jugada no lo necesita.
+            los pases en orden; puedes <strong>pausarla</strong> para explicar un detalle y
+            continuar donde iba. Con <strong>Colocar balón</strong> lo pones donde quieras que
+            empiece, y puedes quitarlo del campo si la jugada no lo necesita. Con las
+            herramientas de material colocas conos, balones, porterías y escaleras.
           </p>
 
           <PlayerInspector player={editor.selectedPlayer} onChange={editor.updatePlayer} />

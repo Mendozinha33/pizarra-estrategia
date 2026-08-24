@@ -180,8 +180,9 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
 - **Play**: nombre, categoría (`Ataque`, `Defensa`, `ABP`, `Entrenamiento`), superficie
   (`full`, `half`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo, consignas y
   el `board`.
-- **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`), `items`
-  (conos y balones), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
+- **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`; hasta 30
+  jugadores y 3 porteros por equipo), `items` (`cone`, `ball`, `small_goal`, `big_goal`,
+  `ladder`), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
   (nulo si la jugada empieza sin balón) y `colors` (color de ficha de jugador y de portero
   para `home` y `away`). Coordenadas en unidades de pizarra sobre un campo de 1050×680.
   `role` y `colors` son opcionales: las jugadas guardadas antes de existir se leen con los
@@ -240,5 +241,5 @@ sin cubrir justo lo que puede fallar en producción (`JSONB`, los `ON DELETE`, l
 - **Historial en un reducer.** Tablero e historial de deshacer viven en la misma
   transición de estado, de modo que no pueden desincronizarse.
 - **Atajos de teclado.** `V` mover, `D` desplazamiento, `P` pase, `C` conducción, `L`
-  trazo libre, `Z` zona, `T` etiqueta, `N` colocar balón, `O` cono, `B` balón extra, `E`
-  borrar, `Ctrl/Cmd+Z` deshacer.
+  trazo libre, `Z` zona, `T` etiqueta, `N` colocar balón, `O` cono, `B` balón extra, `J`
+  portería pequeña, `G` portería grande, `A` escalera, `E` borrar, `Ctrl/Cmd+Z` deshacer.

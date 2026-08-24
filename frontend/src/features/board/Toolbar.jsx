@@ -10,7 +10,10 @@ export function Toolbar({
   labelText,
   onLabelTextChange,
   onPlay,
+  onPause,
+  onStop,
   isPlaying,
+  isPaused,
   onUndo,
   canUndo,
   onClear,
@@ -60,10 +63,32 @@ export function Toolbar({
       )}
 
       <div className="row" style={{ marginLeft: 'auto' }}>
-        <button type="button" className="btn primary" onClick={onPlay} disabled={isPlaying}>
+        <button
+          type="button"
+          className="btn primary"
+          onClick={onPlay}
+          disabled={isPlaying && !isPaused}
+        >
           <Icon name="play" size={15} />
-          {isPlaying ? 'Reproduciendo…' : 'Reproducir jugada'}
+          {isPaused ? 'Continuar' : isPlaying ? 'Reproduciendo…' : 'Reproducir jugada'}
         </button>
+        {isPlaying && (
+          <>
+            <button type="button" className="btn" onClick={onPause} disabled={isPaused}>
+              <Icon name="pause" size={15} />
+              Pausa
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={onStop}
+              title="Detener la reproducción"
+              aria-label="Detener la reproducción"
+            >
+              <Icon name="stop" size={15} />
+            </button>
+          </>
+        )}
         <button type="button" className="btn" onClick={onUndo} disabled={!canUndo}>
           <Icon name="undo" size={15} />
           Deshacer

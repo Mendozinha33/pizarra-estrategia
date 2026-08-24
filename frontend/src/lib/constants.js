@@ -70,8 +70,26 @@ export const TOOLS = [
   { id: 'ball', icon: 'ball', label: 'Colocar balón', key: 'n' },
   { id: 'cone', icon: 'triangle', label: 'Cono', key: 'o' },
   { id: 'extraBall', icon: 'circle', label: 'Balón extra', key: 'b' },
+  { id: 'smallGoal', icon: 'goalSmall', label: 'Portería pequeña', key: 'j' },
+  { id: 'bigGoal', icon: 'goalBig', label: 'Portería grande', key: 'g' },
+  { id: 'ladder', icon: 'ladder', label: 'Escalera', key: 'a' },
   { id: 'erase', icon: 'eraser', label: 'Borrar', key: 'e' },
 ]
+
+/**
+ * Herramientas que colocan material en el campo: qué elemento crea cada una.
+ * Los valores deben coincidir con `ItemKind` del backend.
+ */
+export const ITEM_TOOLS = {
+  cone: 'cone',
+  extraBall: 'ball',
+  smallGoal: 'small_goal',
+  bigGoal: 'big_goal',
+  ladder: 'ladder',
+}
+
+/** Tope de fichas por equipo: jugadores de campo y porteros. */
+export const MAX_PLAYERS_PER_TEAM = { field: 30, gk: 3 }
 
 /** Trazos que la reproducción sabe animar. */
 export const MOVEMENT_SHAPES = new Set(['run', 'dribble', 'free'])

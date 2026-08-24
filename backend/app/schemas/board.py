@@ -54,6 +54,9 @@ class ShapeType(StrEnum):
 class ItemKind(StrEnum):
     CONE = "cone"
     BALL = "ball"
+    SMALL_GOAL = "small_goal"
+    BIG_GOAL = "big_goal"
+    LADDER = "ladder"
 
 
 class PlayerRole(StrEnum):
@@ -119,7 +122,8 @@ class BoardColors(StrictModel):
 
 
 class Board(StrictModel):
-    players: list[Player] = Field(default_factory=list, max_length=40)
+    # Hasta 33 fichas por equipo (30 jugadores + 3 porteros), más margen.
+    players: list[Player] = Field(default_factory=list, max_length=80)
     items: list[BoardItem] = Field(default_factory=list, max_length=200)
     shapes: list[Shape] = Field(default_factory=list, max_length=200)
     # Nulo cuando la jugada empieza sin balón. Si no viene el campo (jugadas
