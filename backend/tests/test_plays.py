@@ -2,6 +2,8 @@
 
 from fastapi.testclient import TestClient
 
+from app.schemas.board import DEFAULT_LABEL_SIZE
+
 
 def test_health(client: TestClient) -> None:
     assert client.get("/api/health").json()["status"] == "ok"
@@ -400,6 +402,66 @@ def test_orientacion_fuera_de_rango_se_rechaza(
             "items": [{"id": "i1", "kind": "cone", "x": 10.0, "y": 10.0, "angle": angulo}],
         }
         assert client.post("/api/plays", json={**play_payload, "board": malo}).status_code == 422
+
+
+def test_etiqueta_guarda_tamano_e_inclinacion(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    """La etiqueta de texto recuerda su tamaño de letra y cuánto está girada."""
+    etiqueta = {
+        "id": "t1",
+        "type": "text",
+        "color": "#FFD447",
+        "points": [{"x": 400.0, "y": 200.0}],
+        "text": "Zona de presión",
+        "size": 52.0,
+        "angle": 270.0,
+    }
+    creada = client.post(
+        "/api/plays", json={**play_payload, "board": {**board, "shapes": [etiqueta]}}
+    ).json()
+
+    guardada = client.get(f"/api/plays/{creada['id']}").json()["board"]
+    assert guardada["shapes"][0]["size"] == 52.0
+    assert guardada["shapes"][0]["angle"] == 270.0
+
+
+def test_etiqueta_sin_tamano_usa_el_de_siempre(client: TestClient, play_payload: dict) -> None:
+    """Las etiquetas guardadas antes de poder cambiarlas se leen como estaban."""
+    creada = client.post("/api/plays", json=play_payload).json()
+
+    trazo = creada["board"]["shapes"][0]
+    assert trazo["size"] == DEFAULT_LABEL_SIZE
+    assert trazo["angle"] == 0
+
+
+def test_tamano_de_etiqueta_fuera_de_rango_se_rechaza(
+    client: TestClient, play_payload: dict, board: dict
+) -> None:
+    for tamano in (5, 200):
+        malo = {
+            **board,
+            "shapes": [
+                {
+                    "id": "t1",
+                    "type": "text",
+                    "color": "#FFD447",
+                    "points": [{"x": 10.0, "y": 10.0}],
+                    "text": "Hola",
+                    "size": tamano,
+                }
+            ],
+        }
+        assert client.post("/api/plays", json={**play_payload, "board": malo}).status_code == 422
+
+
+def test_medio_campo_horizontal_es_una_superficie_valida(
+    client: TestClient, play_payload: dict
+) -> None:
+    """El medio campo apaisado se guarda como cualquier otra superficie."""
+    creada = client.post("/api/plays", json={**play_payload, "surface": "half_wide"}).json()
+
+    assert client.get(f"/api/plays/{creada['id']}").json()["surface"] == "half_wide"
 
 
 def test_caben_treinta_jugadores_y_tres_porteros_por_equipo(

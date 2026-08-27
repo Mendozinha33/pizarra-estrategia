@@ -178,16 +178,19 @@ invalida al instante las sesiones abiertas. Las contraseñas se guardan con PBKD
 - **User**: correo (único, en minúsculas), nombre, permiso (`admin`, `entrenador`), hash de
   contraseña, bloqueado y `must_change_password` (marcado al dar de alta y al restablecer).
 - **Play**: nombre, categoría (`Ataque`, `Defensa`, `ABP`, `Entrenamiento`), superficie
-  (`full`, `half`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo, consignas y
-  el `board`.
+  (`full`, `half`, `half_wide`, `grid`), modalidad (`f11`, `f7`), formación de cada equipo,
+  consignas y el `board`. `half_wide` es el mismo medio campo que `half`: cambia sólo cómo
+  se dibuja (apaisado, con la portería arriba), no las coordenadas guardadas.
 - **Board** (documento `JSONB` validado): `players` (con `role`: `field` o `gk`, y `color`
   opcional para el peto de esa ficha; hasta 30 jugadores y 3 porteros por equipo), `items`
   (`cone`, `ball`, `small_goal`, `big_goal`, `ladder`, cada uno con `angle` en grados para
-  orientarlo), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`), `ball`
+  orientarlo), `shapes` (`run`, `pass`, `dribble`, `free`, `zone`, `text`; las etiquetas
+  llevan además `size`, tamaño de letra, y `angle`, inclinación en grados), `ball`
   (nulo si la jugada empieza sin balón) y `colors` (color de ficha de jugador y de portero
   para `home` y `away`). Coordenadas en unidades de pizarra sobre un campo de 1050×680.
-  `role`, `color`, `angle` y `colors` son opcionales: las jugadas guardadas antes de existir
-  se leen con los colores por defecto, el material sin girar y el dorsal 1 como portero.
+  `role`, `color`, `angle`, `size` y `colors` son opcionales: las jugadas guardadas antes de
+  existir se leen con los colores por defecto, el material y las etiquetas sin girar, las
+  etiquetas con el tamaño de letra de siempre y el dorsal 1 como portero.
   `Player.color` manda sobre el color del equipo, así que dentro de un mismo equipo caben
   varios grupos de color.
   Omitir `ball` lo coloca en el centro; enviarlo a `null` es lo que deja el campo sin balón.

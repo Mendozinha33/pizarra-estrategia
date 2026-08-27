@@ -26,10 +26,18 @@ export const TEAM_COLORS = {
 /** Dimensiones del campo en unidades de pizarra (deben coincidir con el backend). */
 export const PITCH = { width: 1050, height: 680 }
 
+/**
+ * Trozo de campo que se está viendo. `x/y/w/h` es siempre el rectángulo en
+ * unidades de pizarra; `rotate` (grados) sólo cambia cómo se dibuja en pantalla:
+ * el medio campo apaisado es el mismo medio campo girado un cuarto de vuelta,
+ * con la portería arriba. Los identificadores deben coincidir con `Surface` del
+ * backend.
+ */
 export const SURFACES = {
-  full: { x: 0, y: 0, w: 1050, h: 680, label: 'Campo completo' },
-  half: { x: 525, y: 0, w: 525, h: 680, label: 'Medio campo' },
-  grid: { x: 0, y: 0, w: 1050, h: 680, label: 'Espacio reducido' },
+  full: { x: 0, y: 0, w: 1050, h: 680, rotate: 0, label: 'Campo completo' },
+  half: { x: 525, y: 0, w: 525, h: 680, rotate: 0, label: 'Medio campo' },
+  half_wide: { x: 525, y: 0, w: 525, h: 680, rotate: -90, label: 'Medio campo horizontal' },
+  grid: { x: 0, y: 0, w: 1050, h: 680, rotate: 0, label: 'Espacio reducido' },
 }
 
 export const SURFACE_OPTIONS = Object.entries(SURFACES).map(([id, s]) => ({
@@ -66,6 +74,12 @@ export const BIB_COLORS = [
   { id: 'blanco', hex: '#F4F7F3' },
   { id: 'negro', hex: '#141C24' },
 ]
+
+/**
+ * Tamaño de letra de las etiquetas, en unidades de pizarra. `default` debe
+ * coincidir con `DEFAULT_LABEL_SIZE` del backend.
+ */
+export const LABEL_SIZE = { min: 14, max: 90, step: 2, default: 30 }
 
 export const PEN_COLORS = [
   { id: 'amarillo', hex: '#FFD447' },

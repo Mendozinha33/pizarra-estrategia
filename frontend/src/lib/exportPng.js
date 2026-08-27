@@ -1,6 +1,7 @@
 /** Exporta el SVG del lienzo a PNG usando un canvas fuera de pantalla. */
 
 import { SURFACES } from './constants.js'
+import { viewBoxOf } from './geometry.js'
 
 const SCALE = 1.4
 
@@ -20,7 +21,7 @@ export function exportSvgToPng(svgElement, { surface = 'full', filename } = {}) 
       return
     }
 
-    const view = SURFACES[surface] ?? SURFACES.full
+    const view = viewBoxOf(SURFACES[surface] ?? SURFACES.full)
     const clone = svgElement.cloneNode(true)
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
     const markup = new XMLSerializer().serializeToString(clone)

@@ -1,9 +1,26 @@
+import { COLORS, LABEL_SIZE } from '../../lib/constants.js'
 import { polylinePath, wavyPath } from '../../lib/geometry.js'
 
 const HIT_WIDTH = 24
 
-/** Un trazo del entrenador: desplazamiento, pase, conducción, zona o etiqueta. */
-export function BoardShape({ shape, eraseMode = false, onErase }) {
+/** Ancho aproximado de una etiqueta, para su zona de agarre y su marco. */
+const labelWidth = (text, size) => Math.max(size, (text?.length ?? 0) * size * 0.5)
+
+/**
+ * Un trazo del entrenador: desplazamiento, pase, conducción, zona o etiqueta.
+ *
+ * `counter` son los grados que hay que descontar para que el texto salga
+ * derecho cuando el campo se dibuja girado (medio campo horizontal).
+ */
+export function BoardShape({
+  shape,
+  eraseMode = false,
+  onErase,
+  counter = 0,
+  selected = false,
+  interactive = false,
+  onPointerDown,
+}) {
   const handleErase = eraseMode
     ? (event) => {
         event.stopPropagation()
@@ -40,20 +57,50 @@ export function BoardShape({ shape, eraseMode = false, onErase }) {
   }
 
   if (shape.type === 'text') {
+    const size = shape.size ?? LABEL_SIZE.default
+    const width = labelWidth(shape.text, size)
+    // La etiqueta se coloca y se gira con la transformación del grupo, así se
+    // puede arrastrar, agrandar e inclinar sin tocar sus coordenadas.
+    const angle = (shape.angle ?? 0) + counter
+    const grab = interactive
+      ? (event) => {
+          event.stopPropagation()
+          onPointerDown(event, { shape: shape.id })
+        }
+      : handleErase
+    const cursor = eraseMode ? 'pointer' : interactive ? 'grab' : 'default'
+
     return (
-      <text
-        x={first.x}
-        y={first.y}
-        fill={shape.color}
-        fontSize="30"
-        fontFamily="'Barlow Condensed', sans-serif"
-        fontWeight="600"
-        letterSpacing="1"
-        style={stroke.style}
-        onPointerDown={handleErase}
+      <g
+        transform={`translate(${first.x},${first.y}) rotate(${angle})`}
+        onPointerDown={grab}
+        style={{ cursor }}
       >
-        {shape.text}
-      </text>
+        {selected && (
+          <rect
+            x={-8}
+            y={-size - 2}
+            width={width + 16}
+            height={size + 14}
+            rx="5"
+            fill="none"
+            stroke={COLORS.mint}
+            strokeWidth="2.5"
+            strokeDasharray="6 5"
+          />
+        )}
+        {/* Zona de agarre: sin ella sólo se podría tocar el trazo de las letras. */}
+        <rect x={-8} y={-size - 2} width={width + 16} height={size + 14} fill="transparent" />
+        <text
+          fill={shape.color}
+          fontSize={size}
+          fontFamily="'Barlow Condensed', sans-serif"
+          fontWeight="600"
+          letterSpacing="1"
+        >
+          {shape.text}
+        </text>
+      </g>
     )
   }
 

@@ -27,6 +27,8 @@ class Team(StrEnum):
 class Surface(StrEnum):
     FULL = "full"
     HALF = "half"
+    # Mismo medio campo, dibujado apaisado (la portería arriba).
+    HALF_WIDE = "half_wide"
     GRID = "grid"
 
 
@@ -72,6 +74,10 @@ DEFAULT_COLORS = {
 
 HEX_COLOR = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
 
+# Tamaño de letra de las etiquetas cuando la jugada no lo trae guardado; debe
+# coincidir con `LABEL_SIZE.default` del frontend.
+DEFAULT_LABEL_SIZE = 30
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -113,6 +119,12 @@ class Shape(StrictModel):
     color: str = Field(pattern=HEX_COLOR)
     points: list[Point] = Field(min_length=1, max_length=2000)
     text: str = Field(default="", max_length=80)
+    # Tamaño de letra de las etiquetas, en unidades de pizarra. Sólo lo usa el
+    # trazo `text`; las jugadas antiguas se leen con el tamaño de siempre.
+    size: float = Field(default=DEFAULT_LABEL_SIZE, ge=10, le=140)
+    # Inclinación de la etiqueta en grados. Ausente en las jugadas guardadas
+    # antes de poder girarla: se leen derechas.
+    angle: float = Field(default=0, ge=0, lt=360)
 
 
 class TeamColors(StrictModel):

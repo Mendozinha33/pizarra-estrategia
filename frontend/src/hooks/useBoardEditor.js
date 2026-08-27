@@ -4,6 +4,7 @@ import { isGoalkeeper, teamColorsOf } from '../lib/colors.js'
 import {
   DRAW_TOOLS,
   ITEM_TOOLS,
+  LABEL_SIZE,
   MAX_PLAYERS_PER_TEAM,
   PITCH,
   SURFACES,
@@ -96,6 +97,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
   const [draft, setDraft] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   const [selectedItemId, setSelectedItemId] = useState(null)
+  const [selectedShapeId, setSelectedShapeId] = useState(null)
 
   const svgRef = useRef(null)
   const dragRef = useRef(null)
@@ -140,6 +142,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
         dragRef.current = { kind: 'player', id: target.player }
         setSelectedId(target.player)
         setSelectedItemId(null)
+        setSelectedShapeId(null)
         return
       }
 
@@ -159,6 +162,33 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
         dragRef.current = { kind: 'item', id: target.item }
         setSelectedItemId(target.item)
         setSelectedId(null)
+        setSelectedShapeId(null)
+        return
+      }
+
+      // Etiquetas: se seleccionan y se arrastran como una ficha más.
+      if (target?.shape) {
+        if (tool === 'erase') {
+          commit((current) => ({
+            ...current,
+            shapes: current.shapes.filter((shape) => shape.id !== target.shape),
+          }))
+          setSelectedShapeId(null)
+          return
+        }
+        if (tool !== 'select') return
+        event.stopPropagation()
+        event.currentTarget.setPointerCapture?.(event.pointerId)
+        pushHistory()
+        dragRef.current = {
+          kind: 'shape',
+          id: target.shape,
+          from: point,
+          points: board.shapes.find((shape) => shape.id === target.shape)?.points ?? [],
+        }
+        setSelectedShapeId(target.shape)
+        setSelectedId(null)
+        setSelectedItemId(null)
         return
       }
 
@@ -178,6 +208,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       if (tool === 'select') {
         setSelectedId(null)
         setSelectedItemId(null)
+        setSelectedShapeId(null)
         return
       }
 
@@ -204,6 +235,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
         })
         setSelectedItemId(id)
         setSelectedId(null)
+        setSelectedShapeId(null)
         return
       }
 
@@ -212,13 +244,25 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
           onWarn?.('Escribe el texto de la etiqueta antes de colocarla')
           return
         }
+        const id = uid()
         commit((current) => ({
           ...current,
           shapes: [
             ...current.shapes,
-            { id: uid(), type: 'text', points: [point], color, text: labelText.trim() },
+            {
+              id,
+              type: 'text',
+              points: [point],
+              color,
+              text: labelText.trim(),
+              size: LABEL_SIZE.default,
+              angle: 0,
+            },
           ],
         }))
+        setSelectedShapeId(id)
+        setSelectedId(null)
+        setSelectedItemId(null)
         return
       }
 
@@ -226,7 +270,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
         setDraft({ id: 'draft', type: tool, points: [point, point], color, text: '' })
       }
     },
-    [tool, color, bibColor, labelText, commit, pushHistory, pointFrom, onWarn],
+    [tool, color, bibColor, labelText, board.shapes, commit, pushHistory, pointFrom, onWarn],
   )
 
   const handlePointerMove = useCallback(
@@ -240,6 +284,20 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
             return {
               ...current,
               items: current.items.map((i) => (i.id === drag.id ? { ...i, ...point } : i)),
+            }
+          }
+          if (drag.kind === 'shape') {
+            // La etiqueta se mueve entera desde donde se agarró: se recolocan
+            // sus puntos de partida, no los actuales, para no acumular error.
+            const dx = point.x - drag.from.x
+            const dy = point.y - drag.from.y
+            return {
+              ...current,
+              shapes: current.shapes.map((shape) =>
+                shape.id === drag.id
+                  ? { ...shape, points: drag.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) }
+                  : shape,
+              ),
             }
           }
           return {
@@ -378,6 +436,62 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     [commit],
   )
 
+  /**
+   * Etiquetas de texto: tamaño de letra, inclinación y contenido. El tamaño y
+   * la inclinación llegan de un deslizador (un cambio por cada movimiento del
+   * ratón), así que no se apilan en el historial; los giros a saltos sí.
+   */
+  const updateShape = useCallback(
+    (shapeId, changes, undoable = false) => {
+      const apply = (current) => ({
+        ...current,
+        shapes: current.shapes.map((shape) =>
+          shape.id === shapeId ? { ...shape, ...changes } : shape,
+        ),
+      })
+      if (undoable) commit(apply)
+      else setBoard(apply)
+    },
+    [commit, setBoard],
+  )
+
+  const setShapeSize = useCallback(
+    (shapeId, size) => updateShape(shapeId, { size }),
+    [updateShape],
+  )
+
+  const setShapeAngle = useCallback(
+    (shapeId, angle) => updateShape(shapeId, { angle: normalizeAngle(angle) }),
+    [updateShape],
+  )
+
+  const setShapeText = useCallback(
+    (shapeId, text) => updateShape(shapeId, { text }),
+    [updateShape],
+  )
+
+  const rotateShape = useCallback(
+    (shapeId, delta) =>
+      commit((current) => ({
+        ...current,
+        shapes: current.shapes.map((shape) =>
+          shape.id === shapeId ? { ...shape, angle: normalizeAngle((shape.angle ?? 0) + delta) } : shape,
+        ),
+      })),
+    [commit],
+  )
+
+  const removeShape = useCallback(
+    (shapeId) => {
+      commit((current) => ({
+        ...current,
+        shapes: current.shapes.filter((shape) => shape.id !== shapeId),
+      }))
+      setSelectedShapeId(null)
+    },
+    [commit],
+  )
+
   /** Devuelve todas las fichas de un equipo al color de su equipo. */
   const clearBibs = useCallback(
     (team) =>
@@ -415,11 +529,13 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     }))
     setSelectedId(null)
     setSelectedItemId(null)
+    setSelectedShapeId(null)
   }, [commit, homeFormation, formationSize])
 
   const clearAnnotations = useCallback(() => {
     commit((current) => ({ ...current, shapes: [], items: [] }))
     setSelectedItemId(null)
+    setSelectedShapeId(null)
   }, [commit])
 
   /** Quita el balón del campo o lo devuelve al centro. */
@@ -464,6 +580,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       commit({ ...loaded, colors: teamColorsOf(loaded) })
       setSelectedId(null)
       setSelectedItemId(null)
+      setSelectedShapeId(null)
 
       const size = meta.formationSize ?? formationSize
       setFormationSizeState(size)
@@ -482,8 +599,10 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     selectedId,
     setSelectedId,
     selectedItemId,
+    selectedShapeId,
     selectedPlayer: board.players.find((p) => p.id === selectedId) ?? null,
     selectedItem: board.items.find((i) => i.id === selectedItemId) ?? null,
+    selectedShape: board.shapes.find((shape) => shape.id === selectedShapeId) ?? null,
     canUndo: state.past.length > 0,
     formationSize,
     homeFormation,
@@ -501,6 +620,11 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     rotateItem,
     setItemAngle,
     removeItem,
+    rotateShape,
+    setShapeAngle,
+    setShapeSize,
+    setShapeText,
+    removeShape,
     setFormationSize,
     resetField,
     clearAnnotations,

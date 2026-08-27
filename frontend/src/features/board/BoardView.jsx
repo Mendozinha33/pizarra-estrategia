@@ -1,6 +1,7 @@
 import { BoardCanvas } from '../../components/board/BoardCanvas.jsx'
 import { COLORS } from '../../lib/constants.js'
 import { ItemInspector } from './ItemInspector.jsx'
+import { LabelInspector } from './LabelInspector.jsx'
 import { PlayerInspector } from './PlayerInspector.jsx'
 import { SavePlayPanel } from './SavePlayPanel.jsx'
 import { TeamPanel } from './TeamPanel.jsx'
@@ -56,6 +57,7 @@ export function BoardView({ workspace, plays }) {
               draft={editor.draft}
               selectedId={editor.selectedId}
               selectedItemId={editor.selectedItemId}
+              selectedShapeId={editor.selectedShapeId}
               onPointerDown={editor.handlePointerDown}
               onPointerMove={editor.handlePointerMove}
               onPointerUp={editor.handlePointerUp}
@@ -83,7 +85,9 @@ export function BoardView({ workspace, plays }) {
             herramientas de material colocas conos, balones, porterías y escaleras: tócalos luego con{' '}
             <strong>Mover</strong> para arrastrarlos o girarlos hacia donde quieras. Con{' '}
             <strong>Poner peto</strong> eliges un color y tocas las fichas que quieras de ese
-            color: así repartes grupos dentro de un mismo equipo.
+            color: así repartes grupos dentro de un mismo equipo. Las{' '}
+            <strong>etiquetas</strong> también se arrastran con <strong>Mover</strong>, y al
+            tocarlas puedes cambiarles el texto, el tamaño y la inclinación.
           </p>
 
           <ItemInspector
@@ -91,6 +95,15 @@ export function BoardView({ workspace, plays }) {
             onRotate={editor.rotateItem}
             onAngleChange={editor.setItemAngle}
             onRemove={editor.removeItem}
+          />
+
+          <LabelInspector
+            shape={editor.selectedShape}
+            onTextChange={editor.setShapeText}
+            onSizeChange={editor.setShapeSize}
+            onRotate={editor.rotateShape}
+            onAngleChange={editor.setShapeAngle}
+            onRemove={editor.removeShape}
           />
 
           <PlayerInspector

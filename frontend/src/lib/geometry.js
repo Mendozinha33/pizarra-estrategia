@@ -63,11 +63,25 @@ export function wavyPath(from, to) {
 
 export const polylinePath = (points) => `M${points.map((p) => `${p.x},${p.y}`).join(' L')}`
 
+/**
+ * Rectángulo que ve el navegador (el `viewBox` del SVG) para una superficie.
+ * Sin giro es el propio rectángulo del campo; girado un cuarto de vuelta a la
+ * izquierda, el largo del campo pasa a ser el alto de la pantalla.
+ */
+export function viewBoxOf(surface) {
+  if (surface.rotate === -90) {
+    return { x: surface.y, y: -(surface.x + surface.w), w: surface.h, h: surface.w }
+  }
+  return { x: surface.x, y: surface.y, w: surface.w, h: surface.h }
+}
+
 /** Convierte coordenadas de puntero a coordenadas de pizarra. */
 export function toBoardPoint(event, svgElement, surface) {
   const rect = svgElement.getBoundingClientRect()
-  return {
-    x: surface.x + ((event.clientX - rect.left) / rect.width) * surface.w,
-    y: surface.y + ((event.clientY - rect.top) / rect.height) * surface.h,
+  const fx = (event.clientX - rect.left) / rect.width
+  const fy = (event.clientY - rect.top) / rect.height
+  if (surface.rotate === -90) {
+    return { x: surface.x + surface.w * (1 - fy), y: surface.y + surface.h * fx }
   }
+  return { x: surface.x + surface.w * fx, y: surface.y + surface.h * fy }
 }

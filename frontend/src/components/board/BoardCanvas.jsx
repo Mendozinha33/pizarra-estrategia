@@ -2,15 +2,16 @@ import { memo } from 'react'
 
 import { inkOn, teamColorsOf, tokenColor } from '../../lib/colors.js'
 import { COLORS, PEN_COLORS, PLAYBACK_HIDDEN_SHAPES, SURFACES } from '../../lib/constants.js'
+import { viewBoxOf } from '../../lib/geometry.js'
 import { BoardShape } from './BoardShape.jsx'
 import { PitchMarkings } from './PitchMarkings.jsx'
 
 const STRIPES = Array.from({ length: 10 }, (_, i) => i)
 
-function Ball({ x, y, cursor, interactive, onPointerDown }) {
+function Ball({ x, y, cursor, counter = 0, interactive, onPointerDown }) {
   return (
     <g
-      transform={`translate(${x},${y})`}
+      transform={`translate(${x},${y}) rotate(${counter})`}
       onPointerDown={interactive ? (event) => onPointerDown(event, { ball: true }) : undefined}
       style={{ cursor }}
     >
@@ -131,11 +132,11 @@ function FieldItem({ item, selected, cursor, interactive, onPointerDown }) {
   )
 }
 
-function PlayerToken({ player, position, colors, selected, cursor, onPointerDown }) {
+function PlayerToken({ player, position, colors, selected, cursor, counter = 0, onPointerDown }) {
   const fill = tokenColor(player, colors)
   return (
     <g
-      transform={`translate(${position.x},${position.y})`}
+      transform={`translate(${position.x},${position.y}) rotate(${counter})`}
       onPointerDown={onPointerDown}
       style={{ cursor }}
     >
@@ -191,6 +192,7 @@ function BoardCanvasBase({
   draft = null,
   selectedId = null,
   selectedItemId = null,
+  selectedShapeId = null,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -198,6 +200,11 @@ function BoardCanvasBase({
   title,
 }) {
   const view = SURFACES[surface] ?? SURFACES.full
+  const box = viewBoxOf(view)
+  // El medio campo horizontal se dibuja girando todo el campo; las fichas y las
+  // etiquetas se giran de vuelta para que se lean derechas.
+  const spin = view.rotate ?? 0
+  const counter = -spin
   const eraseMode = !readOnly && tool === 'erase'
   const positionOf = (player) => animation?.players[player.id] ?? player
   const ball = animation?.ball ?? board.ball ?? null
@@ -211,13 +218,13 @@ function BoardCanvasBase({
   return (
     <svg
       ref={svgRef}
-      viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
+      viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
       role="img"
       aria-label={title ?? 'Pizarra táctica'}
       style={{
         width: '100%',
         display: 'block',
-        aspectRatio: `${view.w} / ${view.h}`,
+        aspectRatio: `${box.w} / ${box.h}`,
         touchAction: 'none',
         borderRadius: 6,
       }}
@@ -243,57 +250,70 @@ function BoardCanvasBase({
         ))}
       </defs>
 
-      <g>
-        {STRIPES.map((i) => (
-          <rect key={i} x={i * 105} y="0" width="105" height="680" fill={i % 2 ? COLORS.grassAlt : COLORS.grass} />
+      <g transform={`rotate(${spin})`}>
+        <g>
+          {STRIPES.map((i) => (
+            <rect key={i} x={i * 105} y="0" width="105" height="680" fill={i % 2 ? COLORS.grassAlt : COLORS.grass} />
+          ))}
+        </g>
+
+        <PitchMarkings surface={surface} />
+
+        {board.items.map((item) => (
+          <FieldItem
+            key={item.id}
+            item={item}
+            selected={selectedItemId === item.id}
+            interactive={!readOnly && (tool === 'select' || eraseMode)}
+            cursor={readOnly ? 'default' : eraseMode ? 'pointer' : tool === 'select' ? 'grab' : 'default'}
+            onPointerDown={onPointerDown}
+          />
+        ))}
+
+        {shapes.map((shape) => (
+          <BoardShape
+            key={shape.id}
+            shape={shape}
+            counter={counter}
+            eraseMode={eraseMode}
+            onErase={onErase}
+            selected={selectedShapeId === shape.id}
+            interactive={!readOnly && tool === 'select' && shape.type === 'text'}
+            onPointerDown={onPointerDown}
+          />
+        ))}
+
+        {draft && (
+          <g opacity=".85">
+            <BoardShape shape={draft} counter={counter} />
+          </g>
+        )}
+
+        {/* El balón es opcional: la jugada puede empezar sin él. */}
+        {ball && (
+          <Ball
+            x={ball.x}
+            y={ball.y}
+            counter={counter}
+            interactive={!readOnly && (tool === 'select' || eraseMode)}
+            cursor={readOnly ? 'default' : eraseMode ? 'pointer' : tool === 'select' ? 'grab' : 'default'}
+            onPointerDown={onPointerDown}
+          />
+        )}
+
+        {board.players.map((player) => (
+          <PlayerToken
+            key={player.id}
+            player={player}
+            position={positionOf(player)}
+            colors={colors}
+            counter={counter}
+            selected={selectedId === player.id}
+            cursor={readOnly ? 'default' : eraseMode || tool === 'bib' ? 'pointer' : 'grab'}
+            onPointerDown={readOnly ? undefined : (event) => onPointerDown(event, { player: player.id })}
+          />
         ))}
       </g>
-
-      <PitchMarkings surface={surface} />
-
-      {board.items.map((item) => (
-        <FieldItem
-          key={item.id}
-          item={item}
-          selected={selectedItemId === item.id}
-          interactive={!readOnly && (tool === 'select' || eraseMode)}
-          cursor={readOnly ? 'default' : eraseMode ? 'pointer' : tool === 'select' ? 'grab' : 'default'}
-          onPointerDown={onPointerDown}
-        />
-      ))}
-
-      {shapes.map((shape) => (
-        <BoardShape key={shape.id} shape={shape} eraseMode={eraseMode} onErase={onErase} />
-      ))}
-
-      {draft && (
-        <g opacity=".85">
-          <BoardShape shape={draft} />
-        </g>
-      )}
-
-      {/* El balón es opcional: la jugada puede empezar sin él. */}
-      {ball && (
-        <Ball
-          x={ball.x}
-          y={ball.y}
-          interactive={!readOnly && (tool === 'select' || eraseMode)}
-          cursor={readOnly ? 'default' : eraseMode ? 'pointer' : tool === 'select' ? 'grab' : 'default'}
-          onPointerDown={onPointerDown}
-        />
-      )}
-
-      {board.players.map((player) => (
-        <PlayerToken
-          key={player.id}
-          player={player}
-          position={positionOf(player)}
-          colors={colors}
-          selected={selectedId === player.id}
-          cursor={readOnly ? 'default' : eraseMode || tool === 'bib' ? 'pointer' : 'grab'}
-          onPointerDown={readOnly ? undefined : (event) => onPointerDown(event, { player: player.id })}
-        />
-      ))}
     </svg>
   )
 }
