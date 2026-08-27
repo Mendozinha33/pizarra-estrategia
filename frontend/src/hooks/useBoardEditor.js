@@ -395,7 +395,31 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
   )
 
   const clearTeam = useCallback(
-    (team) => commit((current) => ({ ...current, players: current.players.filter((p) => p.team !== team) })),
+    (team) => {
+      commit((current) => ({
+        ...current,
+        players: current.players.filter((p) => p.team !== team),
+      }))
+      setSelectedId(null)
+    },
+    [commit],
+  )
+
+  /** Deja el campo sin ninguna ficha, para colocarlas una a una. */
+  const clearPlayers = useCallback(() => {
+    commit((current) => ({ ...current, players: [] }))
+    setSelectedId(null)
+  }, [commit])
+
+  /** Quita una ficha suelta (la seleccionada en el panel). */
+  const removePlayer = useCallback(
+    (playerId) => {
+      commit((current) => ({
+        ...current,
+        players: current.players.filter((p) => p.id !== playerId),
+      }))
+      setSelectedId(null)
+    },
     [commit],
   )
 
@@ -649,6 +673,8 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     addPlayer,
     squadCounts,
     clearTeam,
+    clearPlayers,
+    removePlayer,
     clearBibs,
     rotateItem,
     setItemAngle,

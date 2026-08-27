@@ -41,27 +41,40 @@ function ClearBibs({ team, hasBibs, onClear }) {
   )
 }
 
-/** Botones para sumar fichas sueltas a un equipo, con el recuento actual. */
-function AddPlayers({ team, counts, onAdd }) {
+/**
+ * Fichas de un equipo: sumar jugadores o porteros sueltos (con el recuento
+ * actual) y dejar el equipo sin ninguna ficha para colocarlas a mano.
+ */
+function SquadButtons({ team, label, counts, onAdd, onClear }) {
   return (
     <div className="row" style={{ marginTop: 6 }}>
       {[
         ['field', 'Jugador'],
         ['gk', 'Portero'],
-      ].map(([role, label]) => (
+      ].map(([role, roleLabel]) => (
         <button
           key={role}
           type="button"
           className="btn ghost"
           style={{ flex: 1 }}
-          title={`Añadir ${label.toLowerCase()}`}
+          title={`Añadir ${roleLabel.toLowerCase()}`}
           disabled={counts[role] >= MAX_PLAYERS_PER_TEAM[role]}
           onClick={() => onAdd(team, role)}
         >
           <Icon name="plus" size={13} />
-          {label} {counts[role]}/{MAX_PLAYERS_PER_TEAM[role]}
+          {roleLabel} {counts[role]}/{MAX_PLAYERS_PER_TEAM[role]}
         </button>
       ))}
+      <button
+        type="button"
+        className="btn ghost"
+        title={`Quitar todas las fichas de ${label.toLowerCase()}`}
+        aria-label={`Quitar todas las fichas de ${label.toLowerCase()}`}
+        disabled={counts.field + counts.gk === 0}
+        onClick={() => onClear(team)}
+      >
+        <Icon name="x" size={13} />
+      </button>
     </div>
   )
 }
@@ -130,7 +143,13 @@ export function TeamPanel({
           onChange={editor.setTeamColor}
         />
         <ClearBibs team="home" hasBibs={hasBibs('home')} onClear={editor.clearBibs} />
-        <AddPlayers team="home" counts={editor.squadCounts.home} onAdd={editor.addPlayer} />
+        <SquadButtons
+          team="home"
+          label="tu equipo"
+          counts={editor.squadCounts.home}
+          onAdd={editor.addPlayer}
+          onClear={editor.clearTeam}
+        />
 
         <label className="f" htmlFor="away-name">
           <span className="teamdot" style={{ background: colors.away.player }} />
@@ -156,7 +175,13 @@ export function TeamPanel({
           onChange={editor.setTeamColor}
         />
         <ClearBibs team="away" hasBibs={hasBibs('away')} onClear={editor.clearBibs} />
-        <AddPlayers team="away" counts={editor.squadCounts.away} onAdd={editor.addPlayer} />
+        <SquadButtons
+          team="away"
+          label="el rival"
+          counts={editor.squadCounts.away}
+          onAdd={editor.addPlayer}
+          onClear={editor.clearTeam}
+        />
 
         <div className="row" style={{ marginTop: 8 }}>
           <button
@@ -166,16 +191,7 @@ export function TeamPanel({
             onClick={() => editor.applyFormation('away', editor.awayFormation)}
           >
             <Icon name="plus" size={14} />
-            Rival
-          </button>
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => editor.clearTeam('away')}
-            title="Quitar rival"
-            aria-label="Quitar rival"
-          >
-            <Icon name="x" size={14} />
+            Poner el rival en formación
           </button>
         </div>
 
@@ -187,11 +203,32 @@ export function TeamPanel({
         </div>
 
         <div className="row" style={{ marginTop: 8 }}>
+          <button
+            type="button"
+            className="btn ghost"
+            style={{ flex: 1 }}
+            title="Dejar el campo sin fichas para colocarlas una a una"
+            disabled={editor.board.players.length === 0}
+            onClick={editor.clearPlayers}
+          >
+            <Icon name="x" size={14} />
+            Vaciar el campo
+          </button>
+        </div>
+
+        <div className="row" style={{ marginTop: 8 }}>
           <button type="button" className="btn ghost" style={{ flex: 1 }} onClick={editor.resetField}>
             <Icon name="rotate" size={14} />
             Reiniciar campo
           </button>
         </div>
+
+        <p className="hint" style={{ marginTop: 8 }}>
+          <strong>Vaciar el campo</strong> quita todas las fichas; luego las vas poniendo una a
+          una con <strong>+ Jugador</strong> y <strong>+ Portero</strong>. Para quitar sólo
+          alguna, tócala y pulsa <strong>Quitar ficha</strong>, o usa la herramienta{' '}
+          <strong>Borrar</strong>. Funciona igual en las cuatro superficies.
+        </p>
       </div>
 
       <div className="card">

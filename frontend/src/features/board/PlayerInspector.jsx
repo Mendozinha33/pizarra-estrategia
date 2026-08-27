@@ -1,3 +1,4 @@
+import { Icon } from '../../components/ui/Icon.jsx'
 import { isGoalkeeper, teamTokenColor, tokenColor } from '../../lib/colors.js'
 import { BIB_COLORS } from '../../lib/constants.js'
 
@@ -49,7 +50,7 @@ function PlayerColorPicker({ player, colors, onChange }) {
 }
 
 /** Edición del dorsal seleccionado. */
-export function PlayerInspector({ player, colors, onChange }) {
+export function PlayerInspector({ player, colors, onChange, onRemove }) {
   return (
     <div className="card">
       <h3>Dorsal seleccionado</h3>
@@ -86,11 +87,24 @@ export function PlayerInspector({ player, colors, onChange }) {
           </label>
 
           <PlayerColorPicker player={player} colors={colors} onChange={onChange} />
+
+          <div className="row" style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              className="btn danger"
+              style={{ flex: 1 }}
+              title="Quitar esta ficha del campo"
+              onClick={() => onRemove(player.id)}
+            >
+              <Icon name="trash" size={14} />
+              Quitar ficha
+            </button>
+          </div>
         </>
       ) : (
         <p className="hint">
           Toca un jugador con la herramienta <strong>Mover</strong> para cambiar su dorsal, su
-          nombre, su color o marcarlo como portero.
+          nombre, su color, marcarlo como portero o quitarlo del campo.
         </p>
       )}
     </div>

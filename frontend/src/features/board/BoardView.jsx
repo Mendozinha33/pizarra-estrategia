@@ -110,6 +110,7 @@ export function BoardView({ workspace, plays }) {
             player={editor.selectedPlayer}
             colors={editor.colors}
             onChange={editor.updatePlayer}
+            onRemove={editor.removePlayer}
           />
         </div>
 
