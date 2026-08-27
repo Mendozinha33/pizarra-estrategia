@@ -30,14 +30,28 @@ export const PITCH = { width: 1050, height: 680 }
  * Trozo de campo que se está viendo. `x/y/w/h` es siempre el rectángulo en
  * unidades de pizarra; `rotate` (grados) sólo cambia cómo se dibuja en pantalla:
  * el medio campo apaisado es el mismo medio campo girado un cuarto de vuelta,
- * con la portería arriba. Los identificadores deben coincidir con `Surface` del
- * backend.
+ * con la portería arriba.
+ *
+ * `mirrored` indica que en esa superficie se juega hacia el otro lado. En medio
+ * campo la portería que se ve es la que defiende el equipo propio, así que la
+ * alineación se coloca al revés: el portero dentro de esa portería, la defensa
+ * delante y el ataque hacia la línea de medio campo.
+ *
+ * Los identificadores deben coincidir con `Surface` del backend.
  */
 export const SURFACES = {
-  full: { x: 0, y: 0, w: 1050, h: 680, rotate: 0, label: 'Campo completo' },
-  half: { x: 525, y: 0, w: 525, h: 680, rotate: 0, label: 'Medio campo' },
-  half_wide: { x: 525, y: 0, w: 525, h: 680, rotate: -90, label: 'Medio campo horizontal' },
-  grid: { x: 0, y: 0, w: 1050, h: 680, rotate: 0, label: 'Espacio reducido' },
+  full: { x: 0, y: 0, w: 1050, h: 680, rotate: 0, mirrored: false, label: 'Campo completo' },
+  half: { x: 525, y: 0, w: 525, h: 680, rotate: 0, mirrored: true, label: 'Medio campo' },
+  half_wide: {
+    x: 525,
+    y: 0,
+    w: 525,
+    h: 680,
+    rotate: -90,
+    mirrored: true,
+    label: 'Medio campo horizontal',
+  },
+  grid: { x: 0, y: 0, w: 1050, h: 680, rotate: 0, mirrored: false, label: 'Espacio reducido' },
 }
 
 export const SURFACE_OPTIONS = Object.entries(SURFACES).map(([id, s]) => ({

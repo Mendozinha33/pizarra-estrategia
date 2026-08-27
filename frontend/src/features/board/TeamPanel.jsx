@@ -247,6 +247,11 @@ export function TeamPanel({
             </button>
           ))}
         </div>
+        <p className="hint" style={{ marginTop: 8 }}>
+          En medio campo la portería que se ve es la tuya: la alineación se coloca en el
+          sentido del ataque, con el portero en portería, la defensa delante y el ataque hacia
+          la línea de medio campo. Al cambiar de superficie lo dibujado se recoloca solo.
+        </p>
       </div>
     </div>
   )

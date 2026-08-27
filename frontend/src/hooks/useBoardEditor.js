@@ -66,9 +66,12 @@ function benchSpot(view, index, team) {
   const step = 46
   const perRow = Math.max(1, Math.floor((view.w - 80) / step))
   const row = Math.floor(index / perRow)
+  // Cada equipo entra por su banda; en medio campo, donde se juega hacia el
+  // otro lado, las bandas se cambian igual que la alineación.
+  const nearTop = (team === 'away') !== Boolean(view.mirrored)
   return {
     x: view.x + 40 + (index % perRow) * step,
-    y: team === 'away' ? view.y + 42 + row * 52 : view.y + view.h - 42 - row * 52,
+    y: nearTop ? view.y + 42 + row * 52 : view.y + view.h - 42 - row * 52,
   }
 }
 
@@ -607,15 +610,25 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
   const fitToSurface = useCallback((fromSurface, toSurface) => {
     const from = SURFACES[fromSurface] ?? SURFACES.full
     const to = SURFACES[toSurface] ?? SURFACES.full
+    // En medio campo se juega hacia el otro lado, así que además de encoger hay
+    // que dar la vuelta al dibujo para que cada equipo siga defendiendo su
+    // portería.
+    const flip = Boolean(from.mirrored) !== Boolean(to.mirrored)
     // El campo entero y el espacio reducido son el mismo rectángulo, igual que
     // el medio campo y el medio campo horizontal: ahí no hay nada que mover.
-    if (from.x === to.x && from.y === to.y && from.w === to.w && from.h === to.h) return
+    const sameArea =
+      from.x === to.x && from.y === to.y && from.w === to.w && from.h === to.h
+    if (sameArea && !flip) return
 
-    const move = (point) => ({
-      ...point,
-      x: to.x + ((point.x - from.x) / from.w) * to.w,
-      y: to.y + ((point.y - from.y) / from.h) * to.h,
-    })
+    const move = (point) => {
+      const fx = (point.x - from.x) / from.w
+      const fy = (point.y - from.y) / from.h
+      return {
+        ...point,
+        x: to.x + (flip ? 1 - fx : fx) * to.w,
+        y: to.y + (flip ? 1 - fy : fy) * to.h,
+      }
+    }
 
     commit((current) => ({
       ...current,

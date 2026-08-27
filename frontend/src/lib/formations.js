@@ -72,19 +72,22 @@ export function formationNames(size) {
 }
 
 /** Rectángulo del campo entero, cuando no se indica otro. */
-const FULL_VIEW = { x: 0, y: 0, w: PITCH.width, h: PITCH.height }
+const FULL_VIEW = { x: 0, y: 0, w: PITCH.width, h: PITCH.height, mirrored: false }
 
 /**
  * Genera los 7/11 jugadores de un equipo en la formación indicada.
  *
  * `view` es el trozo de campo que se está viendo: la formación se reparte
  * dentro de él, de modo que en medio campo el equipo entero cabe en la mitad
- * que se ve en vez de quedarse media plantilla fuera de la pantalla.
+ * que se ve en vez de quedarse media plantilla fuera de la pantalla. Si esa
+ * superficie se juega hacia el otro lado (`view.mirrored`), la alineación se da
+ * la vuelta: el portero queda en la portería que se ve, la defensa delante de
+ * él y el ataque hacia la línea de medio campo.
  */
 export function buildTeam(team, formation, size, view = FULL_VIEW) {
   const layout = formationsFor(size)[formation]
   if (!layout) return []
-  const mirrored = team === 'away'
+  const mirrored = (team === 'away') !== Boolean(view.mirrored)
   return layout.map(([num, fx, fy]) => ({
     id: uid(),
     team,
