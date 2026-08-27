@@ -22,7 +22,7 @@ export function useWorkspace(plays) {
   // Color de peto activo; `null` significa "quitar el peto" al tocar una ficha.
   const [bibColor, setBibColor] = useState(BIB_COLORS[0].hex)
   const [labelText, setLabelText] = useState('Presión alta')
-  const [surface, setSurface] = useState('full')
+  const [surface, setSurfaceState] = useState('full')
   const [homeName, setHomeName] = useState('Mi equipo')
   const [awayName, setAwayName] = useState('Rival')
   const [draftMeta, setDraftMeta] = useState(EMPTY_META)
@@ -154,7 +154,7 @@ export function useWorkspace(plays) {
         homeFormation: play.home_formation,
         awayFormation: play.away_formation,
       })
-      setSurface(play.surface)
+      setSurfaceState(play.surface)
       setDraftMeta({
         name: play.name,
         category: play.category,
@@ -166,6 +166,20 @@ export function useWorkspace(plays) {
       toast.notify(`Jugada cargada: ${play.name}`)
     },
     [editor, toast],
+  )
+
+  /**
+   * Cambiar de superficie recoloca lo dibujado dentro de lo que se ve: al pasar
+   * a medio campo el equipo entero se encoge en esa mitad en vez de quedarse
+   * media plantilla fuera de la pantalla.
+   */
+  const changeSurface = useCallback(
+    (next) => {
+      if (next === surface) return
+      editor.fitToSurface(surface, next)
+      setSurfaceState(next)
+    },
+    [editor, surface],
   )
 
   const newPlay = useCallback(() => {
@@ -196,7 +210,7 @@ export function useWorkspace(plays) {
     labelText,
     setLabelText,
     surface,
-    setSurface,
+    setSurface: changeSurface,
     homeName,
     setHomeName,
     awayName,

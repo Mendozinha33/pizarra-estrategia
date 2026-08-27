@@ -71,8 +71,17 @@ export function formationNames(size) {
   return Object.keys(formationsFor(size))
 }
 
-/** Genera los 7/11 jugadores de un equipo en la formación indicada. */
-export function buildTeam(team, formation, size) {
+/** Rectángulo del campo entero, cuando no se indica otro. */
+const FULL_VIEW = { x: 0, y: 0, w: PITCH.width, h: PITCH.height }
+
+/**
+ * Genera los 7/11 jugadores de un equipo en la formación indicada.
+ *
+ * `view` es el trozo de campo que se está viendo: la formación se reparte
+ * dentro de él, de modo que en medio campo el equipo entero cabe en la mitad
+ * que se ve en vez de quedarse media plantilla fuera de la pantalla.
+ */
+export function buildTeam(team, formation, size, view = FULL_VIEW) {
   const layout = formationsFor(size)[formation]
   if (!layout) return []
   const mirrored = team === 'away'
@@ -83,8 +92,8 @@ export function buildTeam(team, formation, size) {
     name: '',
     // En todas las formaciones el dorsal 1 es el portero.
     role: num === 1 ? 'gk' : 'field',
-    x: (mirrored ? 1 - fx : fx) * PITCH.width,
-    y: (mirrored ? 1 - fy : fy) * PITCH.height,
+    x: view.x + (mirrored ? 1 - fx : fx) * view.w,
+    y: view.y + (mirrored ? 1 - fy : fy) * view.h,
   }))
 }
 

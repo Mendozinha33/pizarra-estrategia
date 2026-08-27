@@ -6,7 +6,6 @@ import {
   ITEM_TOOLS,
   LABEL_SIZE,
   MAX_PLAYERS_PER_TEAM,
-  PITCH,
   SURFACES,
   UNDO_DEPTH,
 } from '../lib/constants.js'
@@ -344,17 +343,18 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
 
   const applyFormation = useCallback(
     (team, formation) => {
+      const view = SURFACES[surface] ?? SURFACES.full
       commit((current) => ({
         ...current,
         players: [
           ...current.players.filter((p) => p.team !== team),
-          ...buildTeam(team, formation, formationSize),
+          ...buildTeam(team, formation, formationSize, view),
         ],
       }))
       if (team === 'home') setHomeFormation(formation)
       else setAwayFormation(formation)
     },
-    [commit, formationSize],
+    [commit, formationSize, surface],
   )
 
   /** Recuento de fichas por equipo, para los topes y los contadores del panel. */
@@ -509,28 +509,33 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       setFormationSizeState(size)
       setHomeFormation(home)
       setAwayFormation(away)
+      const view = SURFACES[surface] ?? SURFACES.full
       commit((current) => ({
         ...current,
         players: [
-          ...buildTeam('home', home, size),
-          ...(current.players.some((p) => p.team === 'away') ? buildTeam('away', away, size) : []),
+          ...buildTeam('home', home, size, view),
+          ...(current.players.some((p) => p.team === 'away')
+            ? buildTeam('away', away, size, view)
+            : []),
         ],
       }))
     },
-    [commit],
+    [commit, surface],
   )
 
   const resetField = useCallback(() => {
+    const view = SURFACES[surface] ?? SURFACES.full
     // Vaciar el campo no debe deshacer los colores elegidos para las fichas.
     commit((current) => ({
       ...emptyBoard(),
       colors: teamColorsOf(current),
-      players: buildTeam('home', homeFormation, formationSize),
+      players: buildTeam('home', homeFormation, formationSize, view),
+      ball: { x: view.x + view.w / 2, y: view.y + view.h / 2 },
     }))
     setSelectedId(null)
     setSelectedItemId(null)
     setSelectedShapeId(null)
-  }, [commit, homeFormation, formationSize])
+  }, [commit, homeFormation, formationSize, surface])
 
   const clearAnnotations = useCallback(() => {
     commit((current) => ({ ...current, shapes: [], items: [] }))
@@ -540,12 +545,13 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
 
   /** Quita el balón del campo o lo devuelve al centro. */
   const toggleBall = useCallback(() => {
+    const view = SURFACES[surface] ?? SURFACES.full
     commit((current) =>
       current.ball
         ? { ...current, ball: null }
-        : { ...current, ball: { x: PITCH.width / 2, y: PITCH.height / 2 } },
+        : { ...current, ball: { x: view.x + view.w / 2, y: view.y + view.h / 2 } },
     )
-  }, [commit])
+  }, [commit, surface])
 
   /**
    * Color de las fichas de un equipo. Como el selector de color dispara un
@@ -568,6 +574,33 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
       players: current.players.map((p) => (p.id === playerId ? { ...p, ...changes } : p)),
     }))
   }, [setBoard])
+
+  /**
+   * Recoloca lo dibujado al cambiar de superficie: lo que ocupaba el campo
+   * entero se encoge en el medio campo (y al revés, se estira al volver), así
+   * no se queda ningún jugador fuera de lo que se está viendo.
+   */
+  const fitToSurface = useCallback((fromSurface, toSurface) => {
+    const from = SURFACES[fromSurface] ?? SURFACES.full
+    const to = SURFACES[toSurface] ?? SURFACES.full
+    // El campo entero y el espacio reducido son el mismo rectángulo, igual que
+    // el medio campo y el medio campo horizontal: ahí no hay nada que mover.
+    if (from.x === to.x && from.y === to.y && from.w === to.w && from.h === to.h) return
+
+    const move = (point) => ({
+      ...point,
+      x: to.x + ((point.x - from.x) / from.w) * to.w,
+      y: to.y + ((point.y - from.y) / from.h) * to.h,
+    })
+
+    commit((current) => ({
+      ...current,
+      players: current.players.map(move),
+      items: current.items.map(move),
+      shapes: current.shapes.map((shape) => ({ ...shape, points: shape.points.map(move) })),
+      ball: current.ball ? move(current.ball) : null,
+    }))
+  }, [commit])
 
   /**
    * Carga una jugada guardada (el estado anterior queda en el historial).
@@ -626,6 +659,7 @@ export function useBoardEditor({ tool, color, bibColor, surface, labelText, onWa
     setShapeText,
     removeShape,
     setFormationSize,
+    fitToSurface,
     resetField,
     clearAnnotations,
     updatePlayer,
