@@ -84,7 +84,7 @@ export function Header({ view, onViewChange, offline, onChangePassword }) {
   return (
     <header className="bar">
       <div className="brand">
-        <span className="name">Club Manager</span>
+        <img className="brand__logo" src="/logo.png" alt="Mendoza" />
         <span className="badge">Táctica</span>
       </div>
 
