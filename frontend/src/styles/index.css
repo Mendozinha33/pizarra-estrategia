@@ -74,7 +74,7 @@ header.bar {
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
 }
 
@@ -85,6 +85,12 @@ header.bar {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 1;
+}
+
+.brand__logo {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .badge {
@@ -669,6 +675,19 @@ input[type='range'] {
 .login__card {
   width: 100%;
   max-width: 380px;
+}
+
+.login__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.login__logo {
+  height: 40px;
+  width: auto;
+  display: block;
 }
 
 .login__error {

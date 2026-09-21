@@ -32,8 +32,8 @@ export function LoginView() {
   return (
     <div className="login">
       <div className="login__card card">
-        <div className="brand" style={{ marginBottom: 4 }}>
-          <span className="name">Club Manager</span>
+        <div className="login__brand">
+          <img className="login__logo" src="/logo.png" alt="Mendoza" />
           <span className="badge">Táctica</span>
         </div>
         <p className="hint" style={{ marginBottom: 16 }}>
